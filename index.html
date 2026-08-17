@@ -267,7 +267,7 @@ const T = {
     loginSuccess:"تم تسجيل الدخول بنجاح", needLogin:"سجل دخولك أولاً", needSub:"يجب الاشتراك لفتح المسح",
     payCancel:"تم إلغاء الدفع", payError:"خطأ في الدفع", subSuccess:"تم تفعيل الاشتراك بنجاح 🎉",
     camError:"تعذر فتح الكاميرا", invalidBarcode:"باركود غير صحيح", notFound:"المنتج غير موجود",
-    badge:"الأكثر طلباً"
+    badge:"الأكثر طلباً", loggingIn:"جاري تسجيل الدخول..."
   },
   en: {
     tagline:"Discover the quality of what you consume", loginTitle:"Welcome to Dhaki", loginDesc:"Sign in with Pi to unlock subscriptions and camera scanning",
@@ -281,7 +281,7 @@ const T = {
     loginSuccess:"Signed in successfully", needLogin:"Please sign in first", needSub:"Subscribe to unlock scanning",
     payCancel:"Payment cancelled", payError:"Payment error", subSuccess:"Subscription activated 🎉",
     camError:"Cannot open camera", invalidBarcode:"Invalid barcode", notFound:"Product not found",
-    badge:"Most popular"
+    badge:"Most popular", loggingIn:"Signing in..."
   },
   es: {
     tagline:"Descubre la calidad de lo que consumes", loginTitle:"Bienvenido a Dhaki", loginDesc:"Inicia sesión con Pi para desbloquear suscripciones y escaneo",
@@ -295,7 +295,7 @@ const T = {
     loginSuccess:"Sesión iniciada", needLogin:"Inicia sesión primero", needSub:"Suscríbete para escanear",
     payCancel:"Pago cancelado", payError:"Error de pago", subSuccess:"Suscripción activada 🎉",
     camError:"No se puede abrir la cámara", invalidBarcode:"Código inválido", notFound:"Producto no encontrado",
-    badge:"Más popular"
+    badge:"Más popular", loggingIn:"Iniciando sesión..."
   },
   fr: {
     tagline:"Découvrez la qualité de ce que vous consommez", loginTitle:"Bienvenue sur Dhaki", loginDesc:"Connectez-vous avec Pi pour débloquer les abonnements et le scan",
@@ -309,7 +309,7 @@ const T = {
     loginSuccess:"Connexion réussie", needLogin:"Connectez-vous d'abord", needSub:"Abonnez-vous pour scanner",
     payCancel:"Paiement annulé", payError:"Erreur de paiement", subSuccess:"Abonnement activé 🎉",
     camError:"Impossible d'ouvrir la caméra", invalidBarcode:"Code-barres invalide", notFound:"Produit introuvable",
-    badge:"Le plus populaire"
+    badge:"Le plus populaire", loggingIn:"Connexion en cours..."
   }
 };
 
@@ -325,10 +325,7 @@ const CIRC = 326.7;
 let lang = localStorage.getItem('dhaki_lang') || 'ar';
 let currentUser = null;
 let html5QrCode = null;
-
-if (typeof Pi !== 'undefined') {
-  try { Pi.init({ version: "2.0", sandbox: true }); } catch(e) { console.warn('Pi.init failed', e); }
-}
+let piReady = false;
 
 function t(key) { return (T[lang] && T[lang][key]) || T.en[key] || key; }
 
@@ -412,22 +409,56 @@ function updateUI() {
   }
 }
 
+async function initPi() {
+  try {
+    if (typeof Pi === 'undefined') {
+      console.warn('Pi SDK not found');
+      return;
+    }
+    await Pi.init({ version: "2.0", sandbox: true });
+    piReady = true;
+    console.log('Pi SDK ready');
+  } catch (e) {
+    console.warn('Pi.init failed', e);
+  }
+}
+
 function onIncompletePaymentFound(payment) {
   fetch('/api/complete', {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ paymentId: payment.identifier, txid: payment.transaction && payment.transaction.txid })
-  }).catch(()=>{});
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      paymentId: payment.identifier,
+      txid: payment.transaction && payment.transaction.txid
+    })
+  }).catch(() => {});
 }
 
 async function authenticate() {
-  if (typeof Pi === 'undefined') { showMsg('error', 'Pi SDK not loaded'); return; }
+  showMsg('error', t('loggingIn'));
+
+  if (typeof Pi === 'undefined') {
+    showMsg('error', 'Pi SDK not loaded. Open in Pi Browser');
+    return;
+  }
+
+  if (!piReady) {
+    await initPi();
+  }
+
+  if (!piReady) {
+    showMsg('error', 'Pi SDK not ready. Try again');
+    return;
+  }
+
   try {
-    const auth = await Pi.authenticate(['username','payments'], onIncompletePaymentFound);
+    const auth = await Pi.authenticate(['username', 'payments'], onIncompletePaymentFound);
     currentUser = auth.user;
     updateUI();
     showMsg('success', t('loginSuccess'));
-  } catch(e) {
-    showMsg('error', (e && e.message) || String(e));
+  } catch (e) {
+    console.error(e);
+    showMsg('error', (e && e.message) ? e.message : String(e));
   }
 }
 
@@ -609,6 +640,7 @@ document.documentElement.lang = lang;
 document.documentElement.dir = (lang === 'ar') ? 'rtl' : 'ltr';
 applyLang();
 updateUI();
+initPi();
 </script>
 </body>
 </html>
