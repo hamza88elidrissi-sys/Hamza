@@ -1,625 +1,614 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Dhaki · ذكي</title>
-  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
-  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap');
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Dhaki · ذكي</title>
+<script src="https://sdk.minepi.com/pi-sdk.js"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Space+Mono:wght@400;700&display=swap');
 
-    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Cairo', sans-serif; }
+:root{
+  --ink:#08060f;
+  --ink2:#150f30;
+  --violet:#7c5cfc;
+  --violet-deep:#5535d9;
+  --cyan:#49e0d1;
+  --paper:#eeecff;
+  --muted:#a29fd6;
+  --line:rgba(255,255,255,.12);
+  --glass:rgba(255,255,255,.06);
+  --grade-a:#33d17a;
+  --grade-b:#a3d977;
+  --grade-c:#f7c948;
+  --grade-d:#fa9b4e;
+  --grade-e:#f2685c;
+  --danger:#fb7185;
+  --success:#34d399;
+  --font-display:'Cairo',sans-serif;
+  --font-mono:'Space Mono',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box;font-family:var(--font-display)}
+html{scroll-behavior:smooth}
+body{background:radial-gradient(circle at 15% 0%,var(--ink2),var(--ink) 60%);color:var(--paper);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:-50%;background:
+  radial-gradient(circle at 22% 18%,rgba(124,92,252,.20),transparent 42%),
+  radial-gradient(circle at 80% 78%,rgba(73,224,209,.14),transparent 40%);
+  z-index:0;pointer-events:none}
+.container{position:relative;z-index:1;max-width:440px;margin:0 auto;padding:16px 14px 50px}
 
-    body {
-      background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
-      color: #e8e8ff;
-      min-height: 100vh;
-      overflow-x: hidden;
-    }
+header{text-align:center;padding:22px 8px 14px}
+.brand{display:flex;align-items:center;justify-content:center;gap:9px}
+.brand-mark{width:30px;height:30px;flex-shrink:0}
+.logo{font-size:2.1rem;font-weight:800;background:linear-gradient(90deg,#b09bfa,var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:.2px}
+.tagline{font-size:.9rem;color:var(--muted);margin-top:6px}
+.lang-select{margin:14px auto 0;display:block;background:var(--glass);border:1px solid var(--line);color:var(--paper);padding:8px 14px;border-radius:12px;font-size:.85rem;outline:none;cursor:pointer;font-family:var(--font-display)}
 
-    body::before {
-      content: '';
-      position: fixed;
-      top: -50%; left: -50%;
-      width: 200%; height: 200%;
-      background: radial-gradient(circle at 30% 20%, rgba(120, 80, 255, 0.15), transparent 40%),
-                  radial-gradient(circle at 70% 80%, rgba(0, 200, 180, 0.12), transparent 40%);
-      z-index: 0;
-      pointer-events: none;
-    }
+.glass{background:var(--glass);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid var(--line);border-top-color:rgba(255,255,255,.2);border-radius:20px;box-shadow:0 10px 34px rgba(0,0,0,.35)}
 
-    .container {
-      position: relative;
-      z-index: 1;
-      max-width: 440px;
-      margin: 0 auto;
-      padding: 20px 16px 50px;
-    }
+.user-bar{display:none;align-items:center;justify-content:space-between;padding:12px 16px;margin:14px 0;border-radius:14px}
+.user-bar.show{display:flex}
+.user-name{font-weight:600;font-size:.92rem}
+.sub-status{font-size:.72rem;font-family:var(--font-mono);padding:4px 10px;border-radius:20px;background:rgba(73,224,209,.15);color:var(--cyan)}
+.sub-status.locked{background:rgba(251,113,133,.15);color:var(--danger)}
 
-    header {
-      text-align: center;
-      padding: 28px 10px 18px;
-    }
-    .logo {
-      font-size: 2.4rem;
-      font-weight: 800;
-      background: linear-gradient(90deg, #a78bfa, #67e8f9);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      letter-spacing: -1px;
-    }
-    .tagline {
-      font-size: 0.95rem;
-      color: #a5b4fc;
-      margin-top: 6px;
-      opacity: 0.9;
-    }
+.btn{display:block;width:100%;border:none;padding:14px;font-size:1.02rem;font-weight:700;border-radius:14px;cursor:pointer;color:#fff;margin-bottom:10px;transition:filter .15s,transform .1s;font-family:var(--font-display)}
+.btn:hover{filter:brightness(1.08)}
+.btn:active{transform:scale(.97)}
+.btn:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+.btn-primary{background:linear-gradient(135deg,var(--violet),var(--violet-deep));box-shadow:0 8px 20px rgba(124,92,252,.38)}
+.btn-scan{background:linear-gradient(135deg,#059669,#0d9488);box-shadow:0 8px 20px rgba(5,150,105,.32)}
+.btn-scan.locked{background:rgba(255,255,255,.07);color:#8b88b8;box-shadow:none;border:1px dashed var(--line)}
+.btn-plan{background:rgba(255,255,255,.09);border:1px solid var(--line);font-size:.92rem}
+.btn-manual{background:rgba(255,255,255,.09);border:1px solid var(--line);font-size:.92rem}
 
-    .glass {
-      background: rgba(255, 255, 255, 0.07);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      border-radius: 22px;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-    }
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.login-card,.plans,.manual-box,.result-card{padding:22px;margin-bottom:14px}
+.login-card{text-align:center;display:none}
+.login-card.show{display:block;animation:fadeUp .5s cubic-bezier(.22,1,.36,1)}
+.login-icon{width:52px;height:52px;margin:0 auto 12px}
+.login-card h2{font-size:1.28rem;margin-bottom:6px;background:linear-gradient(90deg,#c9baff,var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.login-card p{color:var(--muted);font-size:.87rem;margin-bottom:18px;line-height:1.55}
 
-    .user-bar {
-      display: none;
-      align-items: center;
-      justify-content: space-between;
-      padding: 12px 16px;
-      margin-bottom: 18px;
-      border-radius: 16px;
-    }
-    .user-bar.show { display: flex; }
-    .user-name { font-weight: 600; font-size: 0.95rem; }
-    .sub-status {
-      font-size: 0.8rem;
-      padding: 4px 10px;
-      border-radius: 20px;
-      background: rgba(103, 232, 249, 0.15);
-      color: #67e8f9;
-    }
-    .sub-status.expired {
-      background: rgba(251, 113, 133, 0.15);
-      color: #fb7185;
-    }
+.plans{display:none}
+.plans.show{display:block;animation:fadeUp .5s cubic-bezier(.22,1,.36,1)}
+.plans-title{text-align:center;font-size:1.1rem;font-weight:700;margin-bottom:4px;color:#c9baff}
+.plans-sub{text-align:center;font-size:.8rem;color:var(--muted);margin-bottom:14px}
+.plan-card{padding:16px;margin-bottom:10px;position:relative}
+.plan-card.popular{border-color:rgba(196,181,253,.5)}
+.plan-card.popular::after{content:attr(data-badge);position:absolute;top:-9px;inset-inline-start:14px;background:linear-gradient(90deg,#f472b6,#c084fc);color:#fff;font-size:.62rem;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:.3px}
+.plan-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.plan-name{font-size:1.02rem;font-weight:700}
+.plan-price{font-size:1.5rem;font-weight:700;font-family:var(--font-mono);background:linear-gradient(90deg,var(--cyan),#b09bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.plan-price span{font-size:.78rem;font-family:var(--font-display);font-weight:600;-webkit-text-fill-color:var(--muted)}
 
-    .login-card {
-      display: none;
-      text-align: center;
-      padding: 32px 24px;
-      margin-bottom: 20px;
-    }
-    .login-card.show { display: block; }
-    .login-icon { font-size: 2.8rem; margin-bottom: 12px; }
-    .login-card h2 { font-size: 1.4rem; margin-bottom: 8px; }
-    .login-card p { color: #a5b4fc; font-size: 0.95rem; line-height: 1.6; margin-bottom: 22px; }
+#reader{width:100%;border-radius:16px;overflow:hidden;margin-bottom:14px;display:none;border:1px solid var(--line)}
 
-    .btn {
-      border: none;
-      border-radius: 14px;
-      padding: 14px 20px;
-      font-size: 1rem;
-      font-weight: 700;
-      cursor: pointer;
-      width: 100%;
-      transition: 0.2s;
-      font-family: 'Cairo', sans-serif;
-    }
-    .btn-primary {
-      background: linear-gradient(90deg, #8b5cf6, #06b6d4);
-      color: white;
-    }
-    .btn-primary:active { transform: scale(0.98); }
+.loading{text-align:center;padding:26px 0;display:none}
+.scan-bars{position:relative;width:150px;height:64px;margin:0 auto 16px;display:flex;align-items:flex-end;gap:4px;padding:8px;background:rgba(0,0,0,.28);border-radius:12px;overflow:hidden}
+.scan-bars span{flex:1;background:rgba(176,155,250,.4);border-radius:2px}
+.scan-bars span:nth-child(1){height:55%}
+.scan-bars span:nth-child(2){height:85%}
+.scan-bars span:nth-child(3){height:40%}
+.scan-bars span:nth-child(4){height:100%}
+.scan-bars span:nth-child(5){height:60%}
+.scan-bars span:nth-child(6){height:75%}
+.scan-bars span:nth-child(7){height:45%}
+.scan-bars span:nth-child(8){height:90%}
+.scan-bars::after{content:'';position:absolute;left:6px;right:6px;height:2px;top:8px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);box-shadow:0 0 10px var(--cyan);animation:scansweep 1.7s ease-in-out infinite}
+@keyframes scansweep{0%,100%{top:8px}50%{top:calc(100% - 10px)}}
+.loading p{color:var(--muted);font-size:.85rem}
 
-    .plans { display: none; margin-bottom: 20px; }
-    .plans.show { display: block; }
-    .plans-title {
-      text-align: center;
-      font-size: 1.15rem;
-      font-weight: 700;
-      margin-bottom: 16px;
-      color: #c4b5fd;
-    }
-    .plan-card {
-      padding: 18px 16px;
-      margin-bottom: 12px;
-      text-align: center;
-      position: relative;
-    }
-    .plan-card.popular {
-      border: 1px solid rgba(167, 139, 250, 0.5);
-    }
-    .plan-name { font-size: 1.05rem; font-weight: 600; margin-bottom: 6px; }
-    .plan-price {
-      font-size: 1.8rem;
-      font-weight: 800;
-      margin-bottom: 14px;
-    }
-    .plan-price span { font-size: 0.95rem; opacity: 0.8; }
-    .btn-plan {
-      background: rgba(167, 139, 250, 0.2);
-      color: #c4b5fd;
-      border: 1px solid rgba(167, 139, 250, 0.3);
-    }
+.msg{padding:12px 14px;border-radius:12px;text-align:center;margin:10px 0;display:none;font-size:.86rem;animation:fadeUp .3s ease}
+.error{background:rgba(251,113,133,.14);color:var(--danger);border:1px solid rgba(251,113,133,.28)}
+.success{background:rgba(52,211,153,.14);color:var(--success);border:1px solid rgba(52,211,153,.28)}
 
-    .btn-scan {
-      display: none;
-      background: linear-gradient(90deg, #34d399, #06b6d4);
-      color: #0f0c29;
-      font-size: 1.15rem;
-      margin-bottom: 16px;
-    }
-    .btn-scan.show { display: block; }
+.result-card{display:none;text-align:center}
+.result-card.show{display:block;animation:fadeUp .5s cubic-bezier(.22,1,.36,1)}
+.product-image{width:100%;max-height:160px;object-fit:cover;border-radius:14px;margin-bottom:14px}
+.product-type{display:inline-block;background:rgba(176,155,250,.18);color:#c9baff;font-size:.72rem;font-weight:700;padding:4px 12px;border-radius:20px;margin-bottom:9px;letter-spacing:.3px}
+.product-name{font-size:1.22rem;font-weight:700;margin-bottom:3px;line-height:1.35}
+.brand{color:var(--muted);font-size:.87rem;margin-bottom:18px}
 
-    #reader {
-      width: 100%;
-      border-radius: 16px;
-      overflow: hidden;
-      margin-bottom: 16px;
-      display: none;
-      border: 1px solid rgba(255,255,255,0.15);
-    }
+.score-ring-wrap{position:relative;width:122px;height:122px;margin:0 auto 10px}
+.score-svg{width:100%;height:100%;transform:rotate(-90deg)}
+.score-track{fill:none;stroke:rgba(255,255,255,.09);stroke-width:9}
+.score-fill{fill:none;stroke-width:9;stroke-linecap:round;stroke-dasharray:326.7;stroke-dashoffset:326.7;transition:stroke-dashoffset 1.1s cubic-bezier(.22,1,.36,1),stroke .4s}
+.score-center{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:2.2rem;font-weight:700}
+.score-label{font-size:1.05rem;font-weight:700;margin-bottom:16px}
 
-    .loading {
-      text-align: center;
-      padding: 40px 20px;
-      display: none;
-    }
-    .spinner {
-      width: 50px; height: 50px;
-      border: 3px solid rgba(255,255,255,0.1);
-      border-top: 3px solid #a78bfa;
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-      margin: 0 auto 14px;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
+.cosmetic-block{margin-bottom:6px}
+.cosmetic-icon-svg{width:46px;height:46px;margin-bottom:10px}
+.tag-row{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-bottom:16px}
+.tag-pill{display:inline-block;background:rgba(52,211,153,.15);color:var(--success);font-size:.72rem;font-weight:700;padding:4px 12px;border-radius:20px}
 
-    .msg {
-      padding: 13px 16px;
-      border-radius: 12px;
-      text-align: center;
-      margin: 12px 0;
-      display: none;
-      font-size: 0.92rem;
-    }
-    .error { background: rgba(251, 113, 133, 0.15); color: #fb7185; border: 1px solid rgba(251,113,133,0.25); }
-    .success { background: rgba(52, 211, 153, 0.15); color: #34d399; border: 1px solid rgba(52,211,153,0.25); }
+.details{background:rgba(0,0,0,.24);border-radius:12px;padding:4px 14px}
+.detail-row{display:flex;justify-content:space-between;gap:14px;align-items:baseline;padding:11px 0;border-bottom:1px solid rgba(255,255,255,.07);font-size:.86rem;text-align:start}
+.detail-row:last-child{border-bottom:none}
+.detail-row span:first-child{color:var(--muted);flex-shrink:0}
+.detail-row span:last-child{font-family:var(--font-mono);font-size:.8rem;color:var(--paper);text-align:end}
 
-    .result-card {
-      padding: 24px 20px;
-      display: none;
-      text-align: center;
-      margin-bottom: 20px;
-    }
-    .result-card.show { display: block; }
-    .product-type {
-      display: inline-block;
-      background: rgba(167, 139, 250, 0.2);
-      color: #c4b5fd;
-      font-size: 0.78rem;
-      font-weight: 600;
-      padding: 4px 12px;
-      border-radius: 20px;
-      margin-bottom: 10px;
-    }
-    .product-name {
-      font-size: 1.35rem;
-      font-weight: 700;
-      margin-bottom: 4px;
-      line-height: 1.3;
-    }
-    .brand { color: #a5b4fc; font-size: 0.9rem; margin-bottom: 20px; }
+.manual-box input{width:100%;padding:13px;border:1px solid var(--line);border-radius:12px;background:rgba(0,0,0,.24);color:#fff;font-size:1rem;font-family:var(--font-mono);text-align:center;margin-bottom:10px;direction:ltr;outline:none}
+.manual-box input::placeholder{color:#65618f}
+.manual-box input:focus-visible{outline:2px solid var(--cyan);outline-offset:1px}
+.section-title{font-size:.92rem;font-weight:600;color:var(--muted);margin-bottom:10px;text-align:center}
 
-    .score-ring {
-      width: 130px; height: 130px;
-      border-radius: 50%;
-      margin: 0 auto 14px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 2.6rem;
-      font-weight: 800;
-      color: white;
-      box-shadow: 0 0 30px rgba(0,0,0,0.3);
-    }
-    .score-label {
-      font-size: 1.2rem;
-      font-weight: 700;
-      margin-bottom: 18px;
-    }
-    .details {
-      background: rgba(0,0,0,0.25);
-      border-radius: 14px;
-      padding: 8px 16px;
-      text-align: right;
-    }
-    .detail-row {
-      display: flex;
-      justify-content: space-between;
-      padding: 11px 0;
-      border-bottom: 1px solid rgba(255,255,255,0.06);
-      font-size: 0.92rem;
-    }
-    .detail-row:last-child { border-bottom: none; }
-    .detail-row span:first-child { color: #a5b4fc; }
+footer{text-align:center;margin-top:26px;color:#5b5788;font-size:.72rem;line-height:1.6}
 
-    .manual-box {
-      display: none;
-      margin-top: 16px;
-      gap: 10px;
-    }
-    .manual-box.show { display: flex; }
-    .manual-box input {
-      flex: 1;
-      background: rgba(255,255,255,0.08);
-      border: 1px solid rgba(255,255,255,0.15);
-      border-radius: 12px;
-      padding: 13px 14px;
-      color: white;
-      font-size: 1rem;
-      font-family: 'Cairo', sans-serif;
-      outline: none;
-    }
-    .btn-manual {
-      background: rgba(103, 232, 249, 0.2);
-      color: #67e8f9;
-      width: auto;
-      padding: 13px 18px;
-    }
-
-    footer {
-      text-align: center;
-      margin-top: 40px;
-      font-size: 0.8rem;
-      color: #6b7280;
-      line-height: 1.6;
-    }
-  </style>
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}
+}
+select:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+</style>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <div class="logo">Dhaki · ذكي</div>
-      <div class="tagline">اكتشف جودة ما تستهلكه</div>
-    </header>
-
-    <div class="user-bar glass" id="userBar">
-      <div class="user-name" id="userName">—</div>
-      <div class="sub-status" id="subStatus">—</div>
+<div class="container">
+  <header>
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+        <path d="M7 15V10a3 3 0 0 1 3-3h5M33 15V10a3 3 0 0 0-3-3h-5M7 25v5a3 3 0 0 0 3 3h5M33 25v5a3 3 0 0 1-3 3h-5" stroke="url(#logoGrad)" stroke-width="2.3" stroke-linecap="round"/>
+        <circle cx="20" cy="20" r="3.2" fill="url(#logoGrad)"/>
+        <defs><linearGradient id="logoGrad" x1="0" y1="0" x2="40" y2="40"><stop stop-color="#b09bfa"/><stop offset="1" stop-color="#49e0d1"/></linearGradient></defs>
+      </svg>
+      <div class="logo">Dhaki</div>
     </div>
+    <div class="tagline" id="tagline">اكتشف جودة ما تستهلكه</div>
+    <select class="lang-select" id="langSelect" onchange="changeLang(this.value)">
+      <option value="ar">العربية</option>
+      <option value="en">English</option>
+      <option value="es">Español</option>
+      <option value="fr">Français</option>
+    </select>
+  </header>
 
-    <div class="login-card glass" id="loginCard">
-      <div class="login-icon">✨</div>
-      <h2>مرحباً بك في ذكي</h2>
-      <p>سجل دخولك بـ Pi لفتح خاصية المسح<br>واكتشف جودة المنتجات فوراً</p>
-      <button class="btn btn-primary" id="authBtn" onclick="authenticate()">تسجيل الدخول بـ Pi</button>
-    </div>
-
-    <div class="plans" id="plansBox">
-      <div class="plans-title">اختر باقة الاشتراك</div>
-
-      <div class="plan-card glass">
-        <div class="plan-name">أسبوعي</div>
-        <div class="plan-price">5 <span>Pi</span></div>
-        <button class="btn btn-plan" onclick="subscribe('weekly', 5)">اشترك الآن</button>
-      </div>
-
-      <div class="plan-card glass popular">
-        <div class="plan-name">شهري</div>
-        <div class="plan-price">9 <span>Pi</span></div>
-        <button class="btn btn-plan" onclick="subscribe('monthly', 9)">اشترك الآن</button>
-      </div>
-
-      <div class="plan-card glass">
-        <div class="plan-name">سنوي</div>
-        <div class="plan-price">15 <span>Pi</span></div>
-        <button class="btn btn-plan" onclick="subscribe('yearly', 15)">اشترك الآن</button>
-      </div>
-    </div>
-
-    <button class="btn btn-scan" id="scanBtn" onclick="startScan()">📷 ابدأ المسح</button>
-
-    <div id="reader"></div>
-
-    <div class="loading" id="loading">
-      <div class="spinner"></div>
-      <p>جاري تحليل المنتج...</p>
-    </div>
-
-    <div class="msg error" id="errorMsg"></div>
-    <div class="msg success" id="successMsg"></div>
-
-    <div class="result-card glass" id="resultCard">
-      <div class="product-type" id="productType">—</div>
-      <div class="product-name" id="productName">—</div>
-      <div class="brand" id="productBrand">—</div>
-      <div class="score-ring" id="scoreRing">—</div>
-      <div class="score-label" id="scoreLabel">—</div>
-      <div class="details" id="detailsBox"></div>
-    </div>
-
-    <div class="manual-box" id="manualBox">
-      <input type="text" id="manualBarcode" placeholder="أو أدخل الباركود يدوياً" inputmode="numeric">
-      <button class="btn btn-manual" onclick="analyzeBarcode(document.getElementById('manualBarcode').value)">تحليل</button>
-    </div>
-
-    <footer>
-      Dhaki · Open Food Facts & Open Beauty Facts<br>
-      Pi Network Testnet
-    </footer>
+  <div class="user-bar glass" id="userBar">
+    <div class="user-name" id="userName">—</div>
+    <div class="sub-status locked" id="subStatus">—</div>
   </div>
 
-  <script>
-    const PI_SANDBOX = true;
-    let currentUser = null;
-    let html5QrCode = null;
+  <div class="login-card glass" id="loginCard">
+    <svg class="login-icon" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+      <path d="M7 15V10a3 3 0 0 1 3-3h5M33 15V10a3 3 0 0 0-3-3h-5M7 25v5a3 3 0 0 0 3 3h5M33 25v5a3 3 0 0 1-3 3h-5" stroke="url(#loginGrad)" stroke-width="2.3" stroke-linecap="round"/>
+      <circle cx="20" cy="20" r="3.2" fill="url(#loginGrad)"/>
+      <defs><linearGradient id="loginGrad" x1="0" y1="0" x2="40" y2="40"><stop stop-color="#c9baff"/><stop offset="1" stop-color="#49e0d1"/></linearGradient></defs>
+    </svg>
+    <h2 id="loginTitle">مرحباً بك في Dhaki</h2>
+    <p id="loginDesc">سجل دخولك بـ Pi لفتح الاشتراكات ومسح المنتجات بالكاميرا</p>
+    <button class="btn btn-primary" id="authBtn" onclick="authenticate()">تسجيل الدخول بـ Pi</button>
+  </div>
 
-    try {
-      Pi.init({ version: "2.0", sandbox: PI_SANDBOX });
-    } catch (e) {
-      console.log('Pi init error', e);
-    }
+  <div class="plans glass" id="plansBox">
+    <div class="plans-title" id="plansTitle">اختر باقة الاشتراك</div>
+    <div class="plans-sub" id="plansSub">يفتح الاشتراك المسح بالكاميرا</div>
+    <div class="plan-card glass">
+      <div class="plan-row">
+        <div class="plan-name" id="planWeekly">أسبوعي</div>
+        <div class="plan-price">5 <span>Pi</span></div>
+      </div>
+      <button class="btn btn-plan" onclick="subscribe('weekly',5)" id="btnWeekly">اشترك الآن</button>
+    </div>
+    <div class="plan-card glass popular" data-badge="الأكثر طلباً">
+      <div class="plan-row">
+        <div class="plan-name" id="planMonthly">شهري</div>
+        <div class="plan-price">9 <span>Pi</span></div>
+      </div>
+      <button class="btn btn-plan" onclick="subscribe('monthly',9)" id="btnMonthly">اشترك الآن</button>
+    </div>
+    <div class="plan-card glass">
+      <div class="plan-row">
+        <div class="plan-name" id="planYearly">سنوي</div>
+        <div class="plan-price">15 <span>Pi</span></div>
+      </div>
+      <button class="btn btn-plan" onclick="subscribe('yearly',15)" id="btnYearly">اشترك الآن</button>
+    </div>
+  </div>
 
-    function getSubscription() {
-      try {
-        const data = localStorage.getItem('dhaki_sub');
-        return data ? JSON.parse(data) : null;
-      } catch { return null; }
-    }
+  <button class="btn btn-scan locked" id="scanBtn" onclick="startScan()">🔒 ابدأ المسح (يتطلب اشتراك)</button>
 
-    function isSubscribed() {
-      const sub = getSubscription();
-      if (!sub) return false;
-      return new Date(sub.expiresAt) > new Date();
-    }
+  <div id="reader"></div>
 
-    function saveSubscription(plan) {
-      const now = new Date();
-      let days = 7;
-      if (plan === 'monthly') days = 30;
-      if (plan === 'yearly') days = 365;
-      const expiresAt = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
-      localStorage.setItem('dhaki_sub', JSON.stringify({
-        plan,
-        expiresAt: expiresAt.toISOString(),
-        purchasedAt: now.toISOString()
-      }));
-    }
+  <div class="loading" id="loading">
+    <div class="scan-bars" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+    <p id="loadingText">جاري التحليل...</p>
+  </div>
 
-    function formatDate(iso) {
-      const d = new Date(iso);
-      return d.toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' });
-    }
+  <div class="msg error" id="errorMsg"></div>
+  <div class="msg success" id="successMsg"></div>
 
-    function updateUI() {
-      const loginCard = document.getElementById('loginCard');
-      const plansBox = document.getElementById('plansBox');
-      const scanBtn = document.getElementById('scanBtn');
-      const manualBox = document.getElementById('manualBox');
-      const userBar = document.getElementById('userBar');
-      const userName = document.getElementById('userName');
-      const subStatus = document.getElementById('subStatus');
+  <div class="result-card glass" id="resultCard">
+    <img class="product-image" id="productImage" alt="" style="display:none">
+    <div class="product-type" id="productType">—</div>
+    <div class="product-name" id="productName">—</div>
+    <div class="brand" id="productBrand">—</div>
 
-      if (!currentUser) {
-        loginCard.classList.add('show');
-        plansBox.classList.remove('show');
-        scanBtn.classList.remove('show');
-        manualBox.classList.remove('show');
-        userBar.classList.remove('show');
-        return;
-      }
+    <div class="food-score-block" id="foodScoreBlock" style="display:none">
+      <div class="score-ring-wrap">
+        <svg viewBox="0 0 120 120" class="score-svg" aria-hidden="true">
+          <circle cx="60" cy="60" r="52" class="score-track"/>
+          <circle cx="60" cy="60" r="52" class="score-fill" id="scoreFillCircle"/>
+        </svg>
+        <div class="score-center" id="scoreCenter">—</div>
+      </div>
+      <div class="score-label" id="scoreLabel">—</div>
+    </div>
 
-      loginCard.classList.remove('show');
-      userBar.classList.add('show');
-      userName.textContent = '✦ ' + (currentUser.username || 'مستخدم Pi');
+    <div class="cosmetic-block" id="cosmeticBlock" style="display:none">
+      <svg class="cosmetic-icon-svg" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M12 3c3 4 6 7.5 6 11a6 6 0 1 1-12 0c0-3.5 3-7 6-11Z" stroke="url(#cosGrad)" stroke-width="1.6" stroke-linejoin="round"/>
+        <defs><linearGradient id="cosGrad" x1="0" y1="0" x2="24" y2="24"><stop stop-color="#b09bfa"/><stop offset="1" stop-color="#49e0d1"/></linearGradient></defs>
+      </svg>
+      <div class="tag-row" id="cosmeticTags"></div>
+    </div>
 
-      if (isSubscribed()) {
-        const sub = getSubscription();
-        plansBox.classList.remove('show');
-        scanBtn.classList.add('show');
-        manualBox.classList.add('show');
-        subStatus.textContent = 'نشط حتى ' + formatDate(sub.expiresAt);
-        subStatus.classList.remove('expired');
-      } else {
-        plansBox.classList.add('show');
-        scanBtn.classList.remove('show');
-        manualBox.classList.remove('show');
-        subStatus.textContent = 'لا يوجد اشتراك';
-        subStatus.classList.add('expired');
-      }
-    }
+    <div class="details" id="detailsBox"></div>
+  </div>
 
-    async function authenticate() {
-      showMsg('error', 'جاري تسجيل الدخول...');
-      try {
-        if (typeof Pi === 'undefined') {
-          showMsg('error', 'Pi SDK لم يتحمل. أعد فتح التطبيق من Pi Browser');
-          return;
-        }
-        const auth = await Pi.authenticate(['username', 'payments'], function(payment) {
-          console.log('Incomplete payment', payment);
-        });
-        currentUser = auth.user;
-        updateUI();
-        showMsg('success', 'مرحباً ' + (currentUser.username || '') + ' ✨');
-      } catch (err) {
-        showMsg('error', 'فشل الدخول: ' + (err.message || err));
-      }
-    }
+  <div class="manual-box glass" id="manualBox">
+    <div class="section-title" id="manualTitle">إدخال الباركود يدوياً (مجاني)</div>
+    <input type="text" id="manualBarcode" placeholder="مثال: 3017624010701" inputmode="numeric">
+    <button class="btn btn-manual" onclick="analyzeBarcode(document.getElementById('manualBarcode').value)" id="btnAnalyze">تحليل</button>
+  </div>
 
-    function subscribe(plan, amount) {
-      if (!currentUser) {
-        showMsg('error', 'سجل دخولك أولاً');
-        return;
-      }
+  <footer id="footerText">Dhaki · البيانات من Open Food Facts &amp; Open Beauty Facts<br>Pi Network Testnet</footer>
+</div>
 
-      const paymentData = {
-        amount: amount,
-        memo: 'Dhaki ' + plan + ' subscription',
-        metadata: { plan: plan, app: 'Dhaki' }
-      };
+<script>
+const T = {
+  ar: {
+    tagline:"اكتشف جودة ما تستهلكه", loginTitle:"مرحباً بك في Dhaki", loginDesc:"سجل دخولك بـ Pi لفتح الاشتراكات ومسح المنتجات بالكاميرا",
+    authBtn:"تسجيل الدخول بـ Pi", plansTitle:"اختر باقة الاشتراك", plansSub:"يفتح الاشتراك المسح بالكاميرا", planWeekly:"أسبوعي", planMonthly:"شهري", planYearly:"سنوي",
+    btnSub:"اشترك الآن", scanLocked:"🔒 ابدأ المسح (يتطلب اشتراك)", scanOpen:"📷 ابدأ المسح",
+    manualTitle:"إدخال الباركود يدوياً (مجاني)", btnAnalyze:"تحليل", loading:"جاري التحليل...",
+    noSub:"لا يوجد اشتراك", activeUntil:"نشط حتى ", food:"طعام", cosmetic:"مستحضر تجميل",
+    excellent:"ممتاز", good:"جيد", average:"متوسط", bad:"سيء", poor:"سيء جدًا", notAvailable:"غير متوفر", type:"النوع",
+    energy:"الطاقة", sugars:"السكريات", fat:"الدهون", salt:"الملح", ingredients:"المكونات", category:"الفئة",
+    vegan:"نباتي صرف", palmOilFree:"خالٍ من زيت النخيل",
+    loginSuccess:"تم تسجيل الدخول بنجاح", needLogin:"سجل دخولك أولاً", needSub:"يجب الاشتراك لفتح المسح",
+    payCancel:"تم إلغاء الدفع", payError:"خطأ في الدفع", subSuccess:"تم تفعيل الاشتراك بنجاح 🎉",
+    camError:"تعذر فتح الكاميرا", invalidBarcode:"باركود غير صحيح", notFound:"المنتج غير موجود",
+    badge:"الأكثر طلباً"
+  },
+  en: {
+    tagline:"Discover the quality of what you consume", loginTitle:"Welcome to Dhaki", loginDesc:"Sign in with Pi to unlock subscriptions and camera scanning",
+    authBtn:"Sign in with Pi", plansTitle:"Choose a subscription", plansSub:"A subscription unlocks camera scanning", planWeekly:"Weekly", planMonthly:"Monthly", planYearly:"Yearly",
+    btnSub:"Subscribe now", scanLocked:"🔒 Start Scan (Subscription required)", scanOpen:"📷 Start Scan",
+    manualTitle:"Enter barcode manually (Free)", btnAnalyze:"Analyze", loading:"Analyzing...",
+    noSub:"No subscription", activeUntil:"Active until ", food:"Food", cosmetic:"Cosmetic",
+    excellent:"Excellent", good:"Good", average:"Average", bad:"Bad", poor:"Poor", notAvailable:"N/A", type:"Type",
+    energy:"Energy", sugars:"Sugars", fat:"Fat", salt:"Salt", ingredients:"Ingredients", category:"Category",
+    vegan:"Vegan", palmOilFree:"Palm oil free",
+    loginSuccess:"Signed in successfully", needLogin:"Please sign in first", needSub:"Subscribe to unlock scanning",
+    payCancel:"Payment cancelled", payError:"Payment error", subSuccess:"Subscription activated 🎉",
+    camError:"Cannot open camera", invalidBarcode:"Invalid barcode", notFound:"Product not found",
+    badge:"Most popular"
+  },
+  es: {
+    tagline:"Descubre la calidad de lo que consumes", loginTitle:"Bienvenido a Dhaki", loginDesc:"Inicia sesión con Pi para desbloquear suscripciones y escaneo",
+    authBtn:"Iniciar con Pi", plansTitle:"Elige una suscripción", plansSub:"La suscripción desbloquea el escaneo con cámara", planWeekly:"Semanal", planMonthly:"Mensual", planYearly:"Anual",
+    btnSub:"Suscribirse", scanLocked:"🔒 Escanear (Requiere suscripción)", scanOpen:"📷 Escanear",
+    manualTitle:"Introducir código manualmente (Gratis)", btnAnalyze:"Analizar", loading:"Analizando...",
+    noSub:"Sin suscripción", activeUntil:"Activo hasta ", food:"Comida", cosmetic:"Cosmético",
+    excellent:"Excelente", good:"Bueno", average:"Medio", bad:"Malo", poor:"Muy malo", notAvailable:"N/D", type:"Tipo",
+    energy:"Energía", sugars:"Azúcares", fat:"Grasas", salt:"Sal", ingredients:"Ingredientes", category:"Categoría",
+    vegan:"Vegano", palmOilFree:"Sin aceite de palma",
+    loginSuccess:"Sesión iniciada", needLogin:"Inicia sesión primero", needSub:"Suscríbete para escanear",
+    payCancel:"Pago cancelado", payError:"Error de pago", subSuccess:"Suscripción activada 🎉",
+    camError:"No se puede abrir la cámara", invalidBarcode:"Código inválido", notFound:"Producto no encontrado",
+    badge:"Más popular"
+  },
+  fr: {
+    tagline:"Découvrez la qualité de ce que vous consommez", loginTitle:"Bienvenue sur Dhaki", loginDesc:"Connectez-vous avec Pi pour débloquer les abonnements et le scan",
+    authBtn:"Se connecter avec Pi", plansTitle:"Choisissez un abonnement", plansSub:"L'abonnement débloque le scan par caméra", planWeekly:"Hebdomadaire", planMonthly:"Mensuel", planYearly:"Annuel",
+    btnSub:"S'abonner", scanLocked:"🔒 Scanner (Abonnement requis)", scanOpen:"📷 Scanner",
+    manualTitle:"Saisir le code-barres manuellement (Gratuit)", btnAnalyze:"Analyser", loading:"Analyse en cours...",
+    noSub:"Pas d'abonnement", activeUntil:"Actif jusqu'au ", food:"Aliment", cosmetic:"Cosmétique",
+    excellent:"Excellent", good:"Bon", average:"Moyen", bad:"Mauvais", poor:"Très mauvais", notAvailable:"N/D", type:"Type",
+    energy:"Énergie", sugars:"Sucres", fat:"Matières grasses", salt:"Sel", ingredients:"Ingrédients", category:"Catégorie",
+    vegan:"Végan", palmOilFree:"Sans huile de palme",
+    loginSuccess:"Connexion réussie", needLogin:"Connectez-vous d'abord", needSub:"Abonnez-vous pour scanner",
+    payCancel:"Paiement annulé", payError:"Erreur de paiement", subSuccess:"Abonnement activé 🎉",
+    camError:"Impossible d'ouvrir la caméra", invalidBarcode:"Code-barres invalide", notFound:"Produit introuvable",
+    badge:"Le plus populaire"
+  }
+};
 
-      Pi.createPayment(paymentData, {
-        onReadyForServerApproval: async function(paymentId) {
-          try {
-            await fetch('/api/approve', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ paymentId })
-            });
-          } catch (e) {
-            console.error(e);
-          }
-        },
-        onReadyForServerCompletion: async function(paymentId, txid) {
-          try {
-            await fetch('/api/complete', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ paymentId, txid })
-            });
-            saveSubscription(plan);
-            updateUI();
-            const names = { weekly: 'الأسبوعية', monthly: 'الشهرية', yearly: 'السنوية' };
-            showMsg('success', 'تم تفعيل الباقة ' + names[plan] + ' بنجاح 🎉');
-          } catch (e) {
-            showMsg('error', 'خطأ في إكمال الدفع');
-          }
-        },
-        onCancel: function() {
-          showMsg('error', 'تم إلغاء الدفع');
-        },
-        onError: function(error) {
-          showMsg('error', 'خطأ في الدفع: ' + (error.message || error));
-        }
-      });
-    }
+const GRADE_MAP = {
+  a:{pct:.95,color:'#33d17a',key:'excellent'},
+  b:{pct:.75,color:'#a3d977',key:'good'},
+  c:{pct:.55,color:'#f7c948',key:'average'},
+  d:{pct:.35,color:'#fa9b4e',key:'bad'},
+  e:{pct:.15,color:'#f2685c',key:'poor'}
+};
+const CIRC = 326.7;
 
-    function showMsg(type, text) {
-      const el = document.getElementById(type === 'error' ? 'errorMsg' : 'successMsg');
-      el.textContent = text;
-      el.style.display = 'block';
-      setTimeout(() => { el.style.display = 'none'; }, 4000);
-    }
+let lang = localStorage.getItem('dhaki_lang') || 'ar';
+let currentUser = null;
+let html5QrCode = null;
 
-    async function startScan() {
-      document.getElementById('scanBtn').style.display = 'none';
-      document.getElementById('reader').style.display = 'block';
-      document.getElementById('resultCard').classList.remove('show');
+if (typeof Pi !== 'undefined') {
+  try { Pi.init({ version: "2.0", sandbox: true }); } catch(e) { console.warn('Pi.init failed', e); }
+}
 
-      try {
-        html5QrCode = new Html5Qrcode("reader");
-        await html5QrCode.start(
-          { facingMode: "environment" },
-          { fps: 10, qrbox: { width: 250, height: 250 } },
-          onScanSuccess,
-          () => {}
-        );
-      } catch (err) {
-        showMsg('error', 'تعذر فتح الكاميرا');
-        document.getElementById('scanBtn').style.display = 'block';
-        document.getElementById('reader').style.display = 'none';
-      }
-    }
+function t(key) { return (T[lang] && T[lang][key]) || T.en[key] || key; }
 
-    async function onScanSuccess(text) {
-      if (html5QrCode) {
-        await html5QrCode.stop();
-        html5QrCode.clear();
-      }
-      document.getElementById('reader').style.display = 'none';
-      document.getElementById('scanBtn').style.display = 'block';
-      analyzeBarcode(text);
-    }
+function changeLang(l) {
+  lang = l;
+  localStorage.setItem('dhaki_lang', l);
+  document.documentElement.lang = l;
+  document.documentElement.dir = (l === 'ar') ? 'rtl' : 'ltr';
+  applyLang();
+  updateUI();
+}
 
-    async function analyzeBarcode(barcode) {
-      barcode = (barcode || '').trim();
-      if (barcode.length < 8) {
-        showMsg('error', 'باركود غير صحيح');
-        return;
-      }
-      document.getElementById('loading').style.display = 'block';
-      document.getElementById('resultCard').classList.remove('show');
+function applyLang() {
+  document.getElementById('tagline').textContent = t('tagline');
+  document.getElementById('loginTitle').textContent = t('loginTitle');
+  document.getElementById('loginDesc').textContent = t('loginDesc');
+  document.getElementById('authBtn').textContent = t('authBtn');
+  document.getElementById('plansTitle').textContent = t('plansTitle');
+  document.getElementById('plansSub').textContent = t('plansSub');
+  document.getElementById('planWeekly').textContent = t('planWeekly');
+  document.getElementById('planMonthly').textContent = t('planMonthly');
+  document.getElementById('planYearly').textContent = t('planYearly');
+  document.getElementById('btnWeekly').textContent = t('btnSub');
+  document.getElementById('btnMonthly').textContent = t('btnSub');
+  document.getElementById('btnYearly').textContent = t('btnSub');
+  document.getElementById('manualTitle').textContent = t('manualTitle');
+  document.getElementById('btnAnalyze').textContent = t('btnAnalyze');
+  document.getElementById('loadingText').textContent = t('loading');
+  document.querySelector('.plan-card.popular').setAttribute('data-badge', t('badge'));
+  document.getElementById('langSelect').value = lang;
+}
 
-      try {
-        let res = await fetch('https://world.openfoodfacts.org/api/v2/product/' + barcode + '.json');
-        let data = await res.json();
-        if (data.status === 1 && data.product) {
-          showResult(data.product, 'food');
-          return;
-        }
-        res = await fetch('https://world.openbeautyfacts.org/api/v2/product/' + barcode + '.json');
-        data = await res.json();
-        if (data.status === 1 && data.product) {
-          showResult(data.product, 'cosmetic');
-          return;
-        }
-        throw new Error('المنتج غير موجود');
-      } catch (err) {
-        showMsg('error', err.message || 'حدث خطأ');
-      } finally {
-        document.getElementById('loading').style.display = 'none';
-      }
-    }
+function getSub() {
+  try { const d = localStorage.getItem('dhaki_sub'); return d ? JSON.parse(d) : null; } catch(e) { return null; }
+}
+function isSubscribed() {
+  const s = getSub();
+  return !!(s && new Date(s.expiresAt) > new Date());
+}
+function saveSub(plan) {
+  const days = plan === 'yearly' ? 365 : plan === 'monthly' ? 30 : 7;
+  const exp = new Date(Date.now() + days * 86400000);
+  localStorage.setItem('dhaki_sub', JSON.stringify({ plan, expiresAt: exp.toISOString() }));
+}
+function formatDate(iso) {
+  return new Date(iso).toLocaleDateString(lang === 'ar' ? 'ar-EG' : lang, { year:'numeric', month:'short', day:'numeric' });
+}
 
-    function showResult(product, type) {
-      const name = product.product_name || product.product_name_ar || 'منتج غير معروف';
-      const brand = product.brands || 'غير معروف';
-      let score = 50, label = 'متوسط', color = '#fbbf24';
+function updateUI() {
+  const loginCard = document.getElementById('loginCard');
+  const plansBox = document.getElementById('plansBox');
+  const scanBtn = document.getElementById('scanBtn');
+  const userBar = document.getElementById('userBar');
+  const subStatus = document.getElementById('subStatus');
 
-      if (type === 'food') {
-        const g = (product.nutriscore_grade || '').toLowerCase();
-        const add = product.additives_n || 0;
-        const organic = (product.labels_tags || []).some(t => t.includes('organic') || t.includes('bio'));
-        const map = { a: 90, b: 72, c: 50, d: 28, e: 10 };
-        let base = map[g] || 40;
-        score = Math.round(base * 0.6 + (100 - Math.min(add * 5, 30)) * 0.3 + (organic ? 10 : 0));
-        score = Math.max(0, Math.min(100, score));
-      } else {
-        score = 62;
-      }
+  if (!currentUser) {
+    loginCard.classList.add('show');
+    plansBox.classList.remove('show');
+    userBar.classList.remove('show');
+    scanBtn.className = 'btn btn-scan locked';
+    scanBtn.textContent = t('scanLocked');
+    return;
+  }
 
-      if (score >= 75) { color = '#34d399'; label = 'ممتاز'; }
-      else if (score >= 50) { color = '#67e8f9'; label = 'جيد'; }
-      else if (score >= 30) { color = '#fbbf24'; label = 'متوسط'; }
-      else { color = '#fb7185'; label = 'سيء'; }
+  loginCard.classList.remove('show');
+  userBar.classList.add('show');
+  document.getElementById('userName').textContent = '✦ ' + (currentUser.username || 'User');
+  plansBox.classList.add('show');
 
-      document.getElementById('productType').textContent = type === 'food' ? 'طعام' : 'مستحضر تجميل';
-      document.getElementById('productName').textContent = name;
-      document.getElementById('productBrand').textContent = brand;
+  if (isSubscribed()) {
+    const s = getSub();
+    subStatus.textContent = t('activeUntil') + formatDate(s.expiresAt);
+    subStatus.classList.remove('locked');
+    scanBtn.className = 'btn btn-scan';
+    scanBtn.textContent = t('scanOpen');
+  } else {
+    subStatus.textContent = t('noSub');
+    subStatus.classList.add('locked');
+    scanBtn.className = 'btn btn-scan locked';
+    scanBtn.textContent = t('scanLocked');
+  }
+}
 
-      const ring = document.getElementById('scoreRing');
-      ring.textContent = score;
-      ring.style.background = `conic-gradient(${color} ${score * 3.6}deg, rgba(255,255,255,0.1) 0deg)`;
+function onIncompletePaymentFound(payment) {
+  fetch('/api/complete', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ paymentId: payment.identifier, txid: payment.transaction && payment.transaction.txid })
+  }).catch(()=>{});
+}
 
-      document.getElementById('scoreLabel').textContent = label;
-      document.getElementById('scoreLabel').style.color = color;
-
-      // تفاصيل إضافية
-      let detailsHtml = '';
-      if (type === 'food') {
-        if (product.nutriscore_grade) {
-          detailsHtml += `<div class="detail-row"><span>Nutri-Score</span><span>${product.nutriscore_grade.toUpperCase()}</span></div>`;
-        }
-        if (product.additives_n !== undefined) {
-          detailsHtml += `<div class="detail-row"><span>المضافات</span><span>${product.additives_n}</span></div>`;
-        }
-        if (product.nova_group) {
-          detailsHtml += `<div class="detail-row"><span>NOVA</span><span>${product.nova_group}</span></div>`;
-        }
-      }
-      document.getElementById('detailsBox').innerHTML = detailsHtml || '<div class="detail-row"><span>لا توجد تفاصيل إضافية</span><span></span></div>';
-
-      document.getElementById('resultCard').classList.add('show');
-    }
-
-    // ===== هذا هو الإصلاح المهم =====
+async function authenticate() {
+  if (typeof Pi === 'undefined') { showMsg('error', 'Pi SDK not loaded'); return; }
+  try {
+    const auth = await Pi.authenticate(['username','payments'], onIncompletePaymentFound);
+    currentUser = auth.user;
     updateUI();
-  </script>
+    showMsg('success', t('loginSuccess'));
+  } catch(e) {
+    showMsg('error', (e && e.message) || String(e));
+  }
+}
+
+function subscribe(plan, amount) {
+  if (!currentUser) { showMsg('error', t('needLogin')); return; }
+  Pi.createPayment({
+    amount, memo: 'Dhaki ' + plan, metadata: { plan, app: 'Dhaki' }
+  }, {
+    onReadyForServerApproval: async (id) => {
+      try { await fetch('/api/approve', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({paymentId:id}) }); } catch(e){}
+    },
+    onReadyForServerCompletion: async (id, txid) => {
+      try {
+        await fetch('/api/complete', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({paymentId:id, txid}) });
+        saveSub(plan);
+        updateUI();
+        showMsg('success', t('subSuccess'));
+      } catch(e) { showMsg('error', t('payError')); }
+    },
+    onCancel: () => showMsg('error', t('payCancel')),
+    onError: (e) => showMsg('error', t('payError') + ': ' + (e.message||e))
+  });
+}
+
+async function startScan() {
+  if (!isSubscribed()) { showMsg('error', t('needSub')); return; }
+  document.getElementById('resultCard').classList.remove('show');
+  document.getElementById('reader').style.display = 'block';
+  document.getElementById('scanBtn').style.display = 'none';
+  html5QrCode = new Html5Qrcode('reader');
+  try {
+    await html5QrCode.start({ facingMode:'environment' }, { fps:10, qrbox:{width:240,height:240} }, onScanSuccess, ()=>{});
+  } catch(e) {
+    showMsg('error', t('camError'));
+    document.getElementById('scanBtn').style.display = 'block';
+    document.getElementById('reader').style.display = 'none';
+  }
+}
+
+async function onScanSuccess(text) {
+  if (html5QrCode) { try { await html5QrCode.stop(); html5QrCode.clear(); } catch(e){} }
+  document.getElementById('reader').style.display = 'none';
+  document.getElementById('scanBtn').style.display = 'block';
+  analyzeBarcode(text);
+}
+
+async function analyzeBarcode(code) {
+  code = (code||'').trim();
+  if (code.length < 8) { showMsg('error', t('invalidBarcode')); return; }
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('resultCard').classList.remove('show');
+  try {
+    let r = await fetch('https://world.openfoodfacts.org/api/v2/product/'+code+'.json');
+    let d = await r.json();
+    if (d.status===1 && d.product) { showResult(d.product,'food'); return; }
+    r = await fetch('https://world.openbeautyfacts.org/api/v2/product/'+code+'.json');
+    d = await r.json();
+    if (d.status===1 && d.product) { showResult(d.product,'cosmetic'); return; }
+    throw new Error(t('notFound'));
+  } catch(e) { showMsg('error', e.message||t('notFound')); }
+  finally { document.getElementById('loading').style.display = 'none'; }
+}
+
+function truncate(s, n) {
+  s = (s||'').trim();
+  return s.length > n ? s.slice(0, n).trim() + '…' : s;
+}
+function fmtNum(v, digits) {
+  if (v === undefined || v === null || v === '' || isNaN(v)) return null;
+  const n = Number(v);
+  return (digits === 0) ? String(Math.round(n)) : n.toFixed(digits===undefined?1:digits).replace(/\.0$/,'');
+}
+function addRow(container, label, value) {
+  const row = document.createElement('div');
+  row.className = 'detail-row';
+  const l = document.createElement('span'); l.textContent = label;
+  const v = document.createElement('span'); v.textContent = value;
+  row.appendChild(l); row.appendChild(v);
+  container.appendChild(row);
+}
+function makePill(text) {
+  const el = document.createElement('span');
+  el.className = 'tag-pill';
+  el.textContent = text;
+  return el;
+}
+
+function showResult(p, type) {
+  const name = p.product_name || p.product_name_ar || p.product_name_fr || p.product_name_en || '—';
+  const brand = p.brands || '—';
+  const img = p.image_front_url || p.image_url || p.image_small_url || '';
+  const imgEl = document.getElementById('productImage');
+  if (img) {
+    imgEl.onerror = () => { imgEl.style.display = 'none'; };
+    imgEl.src = img;
+    imgEl.style.display = 'block';
+  } else {
+    imgEl.style.display = 'none';
+  }
+
+  document.getElementById('productType').textContent = type === 'food' ? t('food') : t('cosmetic');
+  document.getElementById('productName').textContent = name;
+  document.getElementById('productBrand').textContent = brand;
+
+  const foodBlock = document.getElementById('foodScoreBlock');
+  const cosBlock = document.getElementById('cosmeticBlock');
+  const detailsBox = document.getElementById('detailsBox');
+  detailsBox.innerHTML = '';
+
+  const ingredients = p.ingredients_text || p.ingredients_text_ar || p.ingredients_text_en || p.ingredients_text_fr || '';
+
+  if (type === 'food') {
+    cosBlock.style.display = 'none';
+    foodBlock.style.display = 'block';
+
+    const grade = (p.nutriscore_grade || p.nutrition_grades || '').toLowerCase();
+    const g = GRADE_MAP[grade];
+    const fillCircle = document.getElementById('scoreFillCircle');
+    const center = document.getElementById('scoreCenter');
+    const label = document.getElementById('scoreLabel');
+    fillCircle.style.strokeDashoffset = CIRC;
+    if (g) {
+      center.textContent = grade.toUpperCase();
+      label.textContent = t(g.key);
+      fillCircle.style.stroke = g.color;
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        fillCircle.style.strokeDashoffset = String(CIRC * (1 - g.pct));
+      }));
+    } else {
+      center.textContent = '—';
+      label.textContent = t('notAvailable');
+      fillCircle.style.stroke = 'rgba(255,255,255,.28)';
+    }
+
+    const nutr = p.nutriments || {};
+    const rows = [
+      [t('energy'), fmtNum(nutr['energy-kcal_100g'], 0), 'kcal/100g'],
+      [t('sugars'), fmtNum(nutr['sugars_100g'], 1), 'g/100g'],
+      [t('fat'), fmtNum(nutr['fat_100g'], 1), 'g/100g'],
+      [t('salt'), fmtNum(nutr['salt_100g'], 2), 'g/100g']
+    ];
+    rows.forEach(([rlabel, val, unit]) => {
+      if (val === null) return;
+      addRow(detailsBox, rlabel, val + ' ' + unit);
+    });
+    if (ingredients) addRow(detailsBox, t('ingredients'), truncate(ingredients, 110));
+  } else {
+    foodBlock.style.display = 'none';
+    cosBlock.style.display = 'block';
+
+    const tags = p.ingredients_analysis_tags || [];
+    const tagRow = document.getElementById('cosmeticTags');
+    tagRow.innerHTML = '';
+    if (tags.indexOf('en:vegan') !== -1) tagRow.appendChild(makePill(t('vegan')));
+    if (tags.indexOf('en:palm-oil-free') !== -1) tagRow.appendChild(makePill(t('palmOilFree')));
+
+    const category = (p.categories || '').split(',')[0].trim() || '—';
+    addRow(detailsBox, t('category'), category);
+    if (ingredients) addRow(detailsBox, t('ingredients'), truncate(ingredients, 110));
+  }
+
+  const resultCard = document.getElementById('resultCard');
+  resultCard.classList.add('show');
+  resultCard.scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+
+let msgTimeout;
+function showMsg(type, text) {
+  const el = document.getElementById(type === 'error' ? 'errorMsg' : 'successMsg');
+  const other = document.getElementById(type === 'error' ? 'successMsg' : 'errorMsg');
+  other.style.display = 'none';
+  el.textContent = text;
+  el.style.display = 'block';
+  clearTimeout(msgTimeout);
+  msgTimeout = setTimeout(() => { el.style.display = 'none'; }, 3500);
+}
+
+document.documentElement.lang = lang;
+document.documentElement.dir = (lang === 'ar') ? 'rtl' : 'ltr';
+applyLang();
+updateUI();
+</script>
 </body>
 </html>
