@@ -242,6 +242,11 @@ select:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
     </div>
 
     <div class="details" id="detailsBox"></div>
+
+    <!-- زر المشاركة -->
+    <button class="btn btn-primary" id="shareBtn" onclick="shareProduct()" style="margin-top:16px; display:none;">
+      مشاركة التقييم
+    </button>
   </div>
 
   <div class="manual-box glass" id="manualBox">
@@ -267,7 +272,7 @@ const T = {
     loginSuccess:"تم تسجيل الدخول بنجاح", needLogin:"سجل دخولك أولاً", needSub:"يجب الاشتراك لفتح المسح",
     payCancel:"تم إلغاء الدفع", payError:"خطأ في الدفع", subSuccess:"تم تفعيل الاشتراك بنجاح 🎉",
     camError:"تعذر فتح الكاميرا", invalidBarcode:"باركود غير صحيح", notFound:"المنتج غير موجود",
-    badge:"الأكثر طلباً", loggingIn:"جاري تسجيل الدخول..."
+    badge:"الأكثر طلباً", shareBtn:"مشاركة التقييم"
   },
   en: {
     tagline:"Discover the quality of what you consume", loginTitle:"Welcome to Dhaki", loginDesc:"Sign in with Pi to unlock subscriptions and camera scanning",
@@ -281,7 +286,7 @@ const T = {
     loginSuccess:"Signed in successfully", needLogin:"Please sign in first", needSub:"Subscribe to unlock scanning",
     payCancel:"Payment cancelled", payError:"Payment error", subSuccess:"Subscription activated 🎉",
     camError:"Cannot open camera", invalidBarcode:"Invalid barcode", notFound:"Product not found",
-    badge:"Most popular", loggingIn:"Signing in..."
+    badge:"Most popular", shareBtn:"Share Rating"
   },
   es: {
     tagline:"Descubre la calidad de lo que consumes", loginTitle:"Bienvenido a Dhaki", loginDesc:"Inicia sesión con Pi para desbloquear suscripciones y escaneo",
@@ -295,7 +300,7 @@ const T = {
     loginSuccess:"Sesión iniciada", needLogin:"Inicia sesión primero", needSub:"Suscríbete para escanear",
     payCancel:"Pago cancelado", payError:"Error de pago", subSuccess:"Suscripción activada 🎉",
     camError:"No se puede abrir la cámara", invalidBarcode:"Código inválido", notFound:"Producto no encontrado",
-    badge:"Más popular", loggingIn:"Iniciando sesión..."
+    badge:"Más popular", shareBtn:"Compartir valoración"
   },
   fr: {
     tagline:"Découvrez la qualité de ce que vous consommez", loginTitle:"Bienvenue sur Dhaki", loginDesc:"Connectez-vous avec Pi pour débloquer les abonnements et le scan",
@@ -309,7 +314,7 @@ const T = {
     loginSuccess:"Connexion réussie", needLogin:"Connectez-vous d'abord", needSub:"Abonnez-vous pour scanner",
     payCancel:"Paiement annulé", payError:"Erreur de paiement", subSuccess:"Abonnement activé 🎉",
     camError:"Impossible d'ouvrir la caméra", invalidBarcode:"Code-barres invalide", notFound:"Produit introuvable",
-    badge:"Le plus populaire", loggingIn:"Connexion en cours..."
+    badge:"Le plus populaire", shareBtn:"Partager l'évaluation"
   }
 };
 
@@ -325,7 +330,10 @@ const CIRC = 326.7;
 let lang = localStorage.getItem('dhaki_lang') || 'ar';
 let currentUser = null;
 let html5QrCode = null;
-let piReady = false;
+
+if (typeof Pi !== 'undefined') {
+  try { Pi.init({ version: "2.0", sandbox: true }); } catch(e) { console.warn('Pi.init failed', e); }
+}
 
 function t(key) { return (T[lang] && T[lang][key]) || T.en[key] || key; }
 
@@ -356,6 +364,10 @@ function applyLang() {
   document.getElementById('loadingText').textContent = t('loading');
   document.querySelector('.plan-card.popular').setAttribute('data-badge', t('badge'));
   document.getElementById('langSelect').value = lang;
+
+  // تحديث نص زر المشاركة
+  const shareBtn = document.getElementById('shareBtn');
+  if (shareBtn) shareBtn.textContent = t('shareBtn');
 }
 
 function getSub() {
@@ -409,56 +421,22 @@ function updateUI() {
   }
 }
 
-async function initPi() {
-  try {
-    if (typeof Pi === 'undefined') {
-      console.warn('Pi SDK not found');
-      return;
-    }
-    await Pi.init({ version: "2.0", sandbox: true });
-    piReady = true;
-    console.log('Pi SDK ready');
-  } catch (e) {
-    console.warn('Pi.init failed', e);
-  }
-}
-
 function onIncompletePaymentFound(payment) {
   fetch('/api/complete', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      paymentId: payment.identifier,
-      txid: payment.transaction && payment.transaction.txid
-    })
-  }).catch(() => {});
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ paymentId: payment.identifier, txid: payment.transaction && payment.transaction.txid })
+  }).catch(()=>{});
 }
 
 async function authenticate() {
-  showMsg('error', t('loggingIn'));
-
-  if (typeof Pi === 'undefined') {
-    showMsg('error', 'Pi SDK not loaded. Open in Pi Browser');
-    return;
-  }
-
-  if (!piReady) {
-    await initPi();
-  }
-
-  if (!piReady) {
-    showMsg('error', 'Pi SDK not ready. Try again');
-    return;
-  }
-
+  if (typeof Pi === 'undefined') { showMsg('error', 'Pi SDK not loaded'); return; }
   try {
-    const auth = await Pi.authenticate(['username', 'payments'], onIncompletePaymentFound);
+    const auth = await Pi.authenticate(['username','payments'], onIncompletePaymentFound);
     currentUser = auth.user;
     updateUI();
     showMsg('success', t('loginSuccess'));
-  } catch (e) {
-    console.error(e);
-    showMsg('error', (e && e.message) ? e.message : String(e));
+  } catch(e) {
+    showMsg('error', (e && e.message) || String(e));
   }
 }
 
@@ -486,6 +464,7 @@ function subscribe(plan, amount) {
 async function startScan() {
   if (!isSubscribed()) { showMsg('error', t('needSub')); return; }
   document.getElementById('resultCard').classList.remove('show');
+  document.getElementById('shareBtn').style.display = 'none';
   document.getElementById('reader').style.display = 'block';
   document.getElementById('scanBtn').style.display = 'none';
   html5QrCode = new Html5Qrcode('reader');
@@ -510,6 +489,7 @@ async function analyzeBarcode(code) {
   if (code.length < 8) { showMsg('error', t('invalidBarcode')); return; }
   document.getElementById('loading').style.display = 'block';
   document.getElementById('resultCard').classList.remove('show');
+  document.getElementById('shareBtn').style.display = 'none';
   try {
     let r = await fetch('https://world.openfoodfacts.org/api/v2/product/'+code+'.json');
     let d = await r.json();
@@ -620,9 +600,53 @@ function showResult(p, type) {
     if (ingredients) addRow(detailsBox, t('ingredients'), truncate(ingredients, 110));
   }
 
+  // إظهار زر المشاركة
+  document.getElementById('shareBtn').style.display = 'block';
+
   const resultCard = document.getElementById('resultCard');
   resultCard.classList.add('show');
   resultCard.scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+
+// ========== دالة المشاركة ==========
+function shareProduct() {
+  const name = document.getElementById('productName').textContent || 'منتج';
+  const brand = document.getElementById('productBrand').textContent || '';
+  const type = document.getElementById('productType').textContent || '';
+  const scoreCenter = document.getElementById('scoreCenter').textContent;
+  const scoreLabel = document.getElementById('scoreLabel').textContent;
+
+  let message = `🔍 تقييم منتج على Dhaki\n\n`;
+  message += `المنتج: ${name}\n`;
+  if (brand && brand !== '—') message += `العلامة: ${brand}\n`;
+  message += `النوع: ${type}\n`;
+
+  if (scoreCenter && scoreCenter !== '—') {
+    message += `التقييم: \( {scoreCenter} ( \){scoreLabel})\n`;
+  }
+
+  message += `\nاكتشف جودة ما تستهلكه مع Dhaki على شبكة Pi 🌿`;
+
+  try {
+    if (typeof Pi !== 'undefined' && Pi.openShareDialog) {
+      Pi.openShareDialog('تقييم منتج - Dhaki', message);
+    } else if (navigator.share) {
+      navigator.share({
+        title: 'تقييم منتج - Dhaki',
+        text: message
+      });
+    } else {
+      // fallback: نسخ النص إلى الحافظة
+      navigator.clipboard.writeText(message).then(() => {
+        showMsg('success', lang === 'ar' ? 'تم نسخ التقييم إلى الحافظة' : 'Rating copied to clipboard');
+      }).catch(() => {
+        showMsg('error', lang === 'ar' ? 'تعذر المشاركة' : 'Unable to share');
+      });
+    }
+  } catch (e) {
+    console.error(e);
+    showMsg('error', lang === 'ar' ? 'تعذر المشاركة' : 'Unable to share');
+  }
 }
 
 let msgTimeout;
@@ -640,7 +664,6 @@ document.documentElement.lang = lang;
 document.documentElement.dir = (lang === 'ar') ? 'rtl' : 'ltr';
 applyLang();
 updateUI();
-initPi();
 </script>
 </body>
 </html>
