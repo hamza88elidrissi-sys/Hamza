@@ -278,7 +278,334 @@ footer{text-align:center;margin-top:26px;color:#5b5788;font-size:.72rem;line-hei
 
     <div class="details" id="detailsBox"></div>
     <button class="btn btn-primary" id="shareBtn" onclick="shareProduct()" style="margin-top:16px;display:none">مشاركة التقييم</button>
-    
+     <button class="btn btn-secondary" id="addToTodayBtn" onclick="addCurrentToToday()" style="display:none">إضافة إلى سعرات اليوم</button>
+  </div>
+
+  <div class="manual-box glass" id="manualBox">
+    <div class="section-title" id="manualTitle">إدخال الباركود يدوياً (مجاني)</div>
+    <input type="text" id="manualBarcode" placeholder="مثال: 3017624010701" inputmode="numeric">
+    <button class="btn btn-manual" onclick="analyzeBarcode(document.getElementById('manualBarcode').value)" id="btnAnalyze">تحليل</button>
+  </div>
+
+  <footer>Dhaki · البيانات من Open Food Facts &amp; Open Beauty Facts<br>Pi Network Testnet</footer>
+</div>
+
+<script>
+const T = {
+  ar: {tagline:"اكتشف جودة ما تستهلكه",loginTitle:"مرحباً بك في Dhaki",loginDesc:"سجل دخولك بـ Pi لفتح الاشتراكات ومسح المنتجات بالكاميرا",authBtn:"تسجيل الدخول بـ Pi",plansTitle:"اختر باقة الاشتراك",plansSub:"يفتح الاشتراك المسح بالكاميرا",planWeekly:"أسبوعي",planMonthly:"شهري",planYearly:"سنوي",btnSub:"اشترك الآن",scanLocked:"🔒 ابدأ المسح (يتطلب اشتراك)",scanOpen:"📷 ابدأ المسح",manualTitle:"إدخال الباركود يدوياً (مجاني)",btnAnalyze:"تحليل",loading:"جاري التحليل...",noSub:"لا يوجد اشتراك",activeUntil:"نشط حتى ",food:"طعام",cosmetic:"مستحضر تجميل",excellent:"ممتاز",good:"جيد",average:"متوسط",bad:"سيء",poor:"سيء جدًا",notAvailable:"غير متوفر",energy:"الطاقة",sugars:"السكريات",fat:"الدهون",salt:"الملح",ingredients:"المكونات",category:"الفئة",vegan:"نباتي صرف",palmOilFree:"خالٍ من زيت النخيل",loginSuccess:"تم تسجيل الدخول بنجاح",needLogin:"سجل دخولك أولاً",needSub:"يجب الاشتراك لفتح المسح",payCancel:"تم إلغاء الدفع",payError:"خطأ في الدفع",subSuccess:"تم تفعيل الاشتراك بنجاح 🎉",camError:"تعذر فتح الكاميرا",invalidBarcode:"باركود غير صحيح",notFound:"المنتج غير موجود",badge:"الأكثر طلباً",shareBtn:"مشاركة التقييم",settingsBtn:"⚙️ الإعدادات الغذائية والحساسية",settingsSaved:"تم حفظ الإعدادات بنجاح",toolsBtn:"📊 الأدوات الغذائية",addedToToday:"تمت الإضافة إلى سعرات اليوم"}
+};
+
+const GRADE_MAP = {a:{pct:.95,color:'#33d17a',key:'excellent'},b:{pct:.75,color:'#a3d977',key:'good'},c:{pct:.55,color:'#f7c948',key:'average'},d:{pct:.35,color:'#fa9b4e',key:'bad'},e:{pct:.15,color:'#f2685c',key:'poor'}};
+const CIRC = 326.7;
+const ALLERGEN_MAP = {gluten:['en:gluten','en:wheat','en:barley','en:rye'],peanuts:['en:peanuts'],milk:['en:milk','en:lactose'],eggs:['en:eggs'],soy:['en:soybeans','en:soy'],nuts:['en:nuts','en:almonds','en:hazelnuts'],fish:['en:fish'],sesame:['en:sesame-seeds','en:sesame']};
+
+let lang = localStorage.getItem('dhaki_lang') || 'ar';
+let currentUser = null;
+let html5QrCode = null;
+let userSettings = loadSettings();
+let productHistory = loadHistory();
+let currentProductData = null; // لحفظ بيانات آخر منتج
+
+if (typeof Pi !== 'undefined') { try { Pi.init({ version: "2.0", sandbox: true }); } catch(e){} }
+
+function t(key){ return (T[lang]&&T[lang][key])||T.ar[key]||key; }
+
+function loadSettings(){ try{return JSON.parse(localStorage.getItem('dhaki_settings'))||{allergies:[],diets:[]}}catch(e){return{allergies:[],diets:[]}} }
+function loadHistory(){ try{return JSON.parse(localStorage.getItem('dhaki_history'))||[]}catch(e){return[]} }
+function saveHistory(){ localStorage.setItem('dhaki_history', JSON.stringify(productHistory.slice(0,50))); }
+
+function saveSettings(){
+  const allergies=[], diets=[];
+  document.querySelectorAll('#allergyGroup input:checked').forEach(el=>allergies.push(el.value));
+  document.querySelectorAll('#dietGroup input:checked').forEach(el=>diets.push(el.value));
+  userSettings={allergies,diets};
+  localStorage.setItem('dhaki_settings',JSON.stringify(userSettings));
+  showMsg('success',t('settingsSaved'));
+  toggleSettings();
+}
+
+function toggleSettings(){ document.getElementById('settingsCard').classList.toggle('show'); }
+function toggleTools(){ 
+  document.getElementById('toolsCard').classList.toggle('show');
+  updateTodayCalories();
+}
+function closeHistory(){ document.getElementById('historyCard').classList.remove('show'); }
+function closeCompare(){ document.getElementById('compareCard').classList.remove('show'); }
+
+function updateTodayCalories(){
+  const today = new Date().toDateString();
+  const todayItems = productHistory.filter(p => p.date === today);
+  const total = todayItems.reduce((sum,p) => sum + (p.kcal||0), 0);
+  document.getElementById('todayCalories').textContent = Math.round(total);
+}
+
+function showHistory(){
+  const list = document.getElementById('historyList');
+  list.innerHTML = '';
+  if(productHistory.length===0){
+    list.innerHTML = '<p style="text-align:center;color:var(--muted)">لا يوجد منتجات بعد</p>';
+  } else {
+    productHistory.slice(0,20).forEach((item, idx) => {
+      const div = document.createElement('div');
+      div.className = 'history-item';
+      div.innerHTML = `
+        <div class="name">${item.name}</div>
+        <div class="kcal">${item.kcal?item.kcal+' kcal':'-'}</div>
+        <div class="actions">
+          <button onclick="addToCompare(${idx})">مقارنة</button>
+        </div>`;
+      list.appendChild(div);
+    });
+  }
+  document.getElementById('historyCard').classList.add('show');
+  document.getElementById('toolsCard').classList.remove('show');
+}
+
+let compareList = [];
+function startCompare(){
+  compareList = [];
+  document.getElementById('compareResult').style.display = 'none';
+  document.getElementById('compareSelectArea').innerHTML = '<p style="text-align:center;color:var(--muted);font-size:.85rem">اختر منتجين من السجل بالضغط على زر "مقارنة"</p>';
+  document.getElementById('compareCard').classList.add('show');
+  document.getElementById('toolsCard').classList.remove('show');
+  showHistory();
+}
+
+function addToCompare(idx){
+  if(compareList.length >= 2) compareList.shift();
+  compareList.push(productHistory[idx]);
+  if(compareList.length === 2) renderCompare();
+  else showMsg('success', 'تم اختيار المنتج الأول، اختر الثاني');
+}
+
+function renderCompare(){
+  const p1 = compareList[0], p2 = compareList[1];
+  const box = document.getElementById('compareResult');
+  box.style.display = 'grid';
+  box.innerHTML = `
+    <div class="compare-col">
+      <h4>${p1.name}</h4>
+      <div class="compare-row"><span>التقييم</span><span>${p1.grade||'-'}</span></div>
+      <div class="compare-row"><span>السعرات</span><span>${p1.kcal||'-'} kcal</span></div>
+      <div class="compare-row"><span>السكريات</span><span>${p1.sugars||'-'}g</span></div>
+      <div class="compare-row"><span>الدهون</span><span>${p1.fat||'-'}g</span></div>
+      <div class="compare-row"><span>الملح</span><span>${p1.salt||'-'}g</span></div>
+    </div>
+    <div class="compare-col">
+      <h4>${p2.name}</h4>
+      <div class="compare-row"><span>التقييم</span><span>${p2.grade||'-'}</span></div>
+      <div class="compare-row"><span>السعرات</span><span>${p2.kcal||'-'} kcal</span></div>
+      <div class="compare-row"><span>السكريات</span><span>${p2.sugars||'-'}g</span></div>
+      <div class="compare-row"><span>الدهون</span><span>${p2.fat||'-'}g</span></div>
+      <div class="compare-row"><span>الملح</span><span>${p2.salt||'-'}g</span></div>
+    </div>`;
+  closeHistory();
+}
+
+function addCurrentToToday(){
+  if(!currentProductData) return;
+  const today = new Date().toDateString();
+  productHistory.unshift({
+    ...currentProductData,
+    date: today
+  });
+  saveHistory();
+  updateTodayCalories();
+  showMsg('success', t('addedToToday'));
+}
+
+function changeLang(l){ lang=l; localStorage.setItem('dhaki_lang',l); document.documentElement.lang=l; document.documentElement.dir=l==='ar'?'rtl':'ltr'; applyLang(); updateUI(); }
+
+function applyLang(){
+  document.getElementById('tagline').textContent=t('tagline');
+  document.getElementById('loginTitle').textContent=t('loginTitle');
+  document.getElementById('loginDesc').textContent=t('loginDesc');
+  document.getElementById('authBtn').textContent=t('authBtn');
+  document.getElementById('plansTitle').textContent=t('plansTitle');
+  document.getElementById('plansSub').textContent=t('plansSub');
+  document.getElementById('planWeekly').textContent=t('planWeekly');
+  document.getElementById('planMonthly').textContent=t('planMonthly');
+  document.getElementById('planYearly').textContent=t('planYearly');
+  document.getElementById('btnWeekly').textContent=t('btnSub');
+  document.getElementById('btnMonthly').textContent=t('btnSub');
+  document.getElementById('btnYearly').textContent=t('btnSub');
+  document.getElementById('manualTitle').textContent=t('manualTitle');
+  document.getElementById('btnAnalyze').textContent=t('btnAnalyze');
+  document.getElementById('loadingText').textContent=t('loading');
+  document.querySelector('.plan-card.popular').setAttribute('data-badge',t('badge'));
+  document.getElementById('langSelect').value=lang;
+  document.getElementById('shareBtn').textContent=t('shareBtn');
+  document.getElementById('settingsBtn').textContent=t('settingsBtn');
+  document.getElementById('toolsBtn').textContent=t('toolsBtn');
+}
+
+function getSub(){try{return JSON.parse(localStorage.getItem('dhaki_sub'))}catch(e){return null}}
+function isSubscribed(){const s=getSub();return !!(s&&new Date(s.expiresAt)>new Date())}
+function saveSub(plan){const days=plan==='yearly'?365:plan==='monthly'?30:7;const exp=new Date(Date.now()+days*86400000);localStorage.setItem('dhaki_sub',JSON.stringify({plan,expiresAt:exp.toISOString()}))}
+function formatDate(iso){return new Date(iso).toLocaleDateString(lang==='ar'?'ar-EG':lang,{year:'numeric',month:'short',day:'numeric'})}
+
+function updateUI(){
+  const loginCard=document.getElementById('loginCard'), plansBox=document.getElementById('plansBox');
+  const scanBtn=document.getElementById('scanBtn'), userBar=document.getElementById('userBar');
+  const subStatus=document.getElementById('subStatus');
+  const settingsBtn=document.getElementById('settingsBtn'), toolsBtn=document.getElementById('toolsBtn');
+
+  if(!currentUser){
+    loginCard.classList.add('show'); plansBox.classList.remove('show'); userBar.classList.remove('show');
+    settingsBtn.style.display='none'; toolsBtn.style.display='none';
+    scanBtn.className='btn btn-scan locked'; scanBtn.textContent=t('scanLocked'); return;
+  }
+  loginCard.classList.remove('show'); userBar.classList.add('show');
+  document.getElementById('userName').textContent='✦ '+(currentUser.username||'User');
+  plansBox.classList.add('show'); settingsBtn.style.display='block'; toolsBtn.style.display='block';
+
+  if(isSubscribed()){
+    const s=getSub(); subStatus.textContent=t('activeUntil')+formatDate(s.expiresAt); subStatus.classList.remove('locked');
+    scanBtn.className='btn btn-scan'; scanBtn.textContent=t('scanOpen');
+  } else {
+    subStatus.textContent=t('noSub'); subStatus.classList.add('locked');
+    scanBtn.className='btn btn-scan locked'; scanBtn.textContent=t('scanLocked');
+  }
+}
+
+function onIncompletePaymentFound(payment){fetch('/api/complete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({paymentId:payment.identifier,txid:payment.transaction&&payment.transaction.txid})}).catch(()=>{})}
+
+async function authenticate(){
+  if(typeof Pi==='undefined'){showMsg('error','Pi SDK not loaded');return}
+  try{
+    const auth=await Pi.authenticate(['username','payments'],onIncompletePaymentFound);
+    currentUser=auth.user; updateUI(); showMsg('success',t('loginSuccess'));
+  }catch(e){showMsg('error',(e&&e.message)||String(e))}
+}
+
+function subscribe(plan,amount){
+  if(!currentUser){showMsg('error',t('needLogin'));return}
+  Pi.createPayment({amount,memo:'Dhaki '+plan,metadata:{plan,app:'Dhaki'}},{
+    onReadyForServerApproval:async id=>{try{await fetch('/api/approve',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({paymentId:id})})}catch(e){}},
+    onReadyForServerCompletion:async (id,txid)=>{try{await fetch('/api/complete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({paymentId:id,txid})});saveSub(plan);updateUI();showMsg('success',t('subSuccess'))}catch(e){showMsg('error',t('payError'))}},
+    onCancel:()=>showMsg('error',t('payCancel')),
+    onError:e=>showMsg('error',t('payError')+': '+(e.message||e))
+  });
+}
+
+async function startScan(){
+  if(!isSubscribed()){showMsg('error',t('needSub'));return}
+  document.getElementById('resultCard').classList.remove('show');
+  document.getElementById('shareBtn').style.display='none';
+  document.getElementById('addToTodayBtn').style.display='none';
+  document.getElementById('reader').style.display='block';
+  document.getElementById('scanBtn').style.display='none';
+  html5QrCode=new Html5Qrcode('reader');
+  try{await html5QrCode.start({facingMode:'environment'},{fps:10,qrbox:{width:240,height:240}},onScanSuccess,()=>{})}
+  catch(e){showMsg('error',t('camError'));document.getElementById('scanBtn').style.display='block';document.getElementById('reader').style.display='none'}
+}
+
+async function onScanSuccess(text){
+  if(html5QrCode){try{await html5QrCode.stop();html5QrCode.clear()}catch(e){}}
+  document.getElementById('reader').style.display='none';
+  document.getElementById('scanBtn').style.display='block';
+  analyzeBarcode(text);
+}
+
+async function analyzeBarcode(code){
+  code=(code||'').trim();
+  if(code.length<8){showMsg('error',t('invalidBarcode'));return}
+  document.getElementById('loading').style.display='block';
+  document.getElementById('resultCard').classList.remove('show');
+  document.getElementById('shareBtn').style.display='none';
+  document.getElementById('addToTodayBtn').style.display='none';
+  try{
+    let r=await fetch('https://world.openfoodfacts.org/api/v2/product/'+code+'.json');
+    let d=await r.json();
+    if(d.status===1&&d.product){showResult(d.product,'food');return}
+    r=await fetch('https://world.openbeautyfacts.org/api/v2/product/'+code+'.json');
+    d=await r.json();
+    if(d.status===1&&d.product){showResult(d.product,'cosmetic');return}
+    throw new Error(t('notFound'));
+  }catch(e){showMsg('error',e.message||t('notFound'))}
+  finally{document.getElementById('loading').style.display='none'}
+}
+
+function truncate(s,n){s=(s||'').trim();return s.length>n?s.slice(0,n).trim()+'…':s}
+function fmtNum(v,d){if(v===undefined||v===null||v===''||isNaN(v))return null;const n=Number(v);return d===0?String(Math.round(n)):n.toFixed(d===undefined?1:d).replace(/\.0$/,'')}
+function addRow(c,l,v){const row=document.createElement('div');row.className='detail-row';const a=document.createElement('span');a.textContent=l;const b=document.createElement('span');b.textContent=v;row.appendChild(a);row.appendChild(b);c.appendChild(row)}
+function makePill(t){const el=document.createElement('span');el.className='tag-pill';el.textContent=t;return el}
+
+function checkAllergies(product){
+  const found=[];
+  const tags=(product.allergens_tags||[]).map(t=>t.toLowerCase());
+  const text=(product.ingredients_text||'').toLowerCase();
+  userSettings.allergies.forEach(a=>{
+    const keys=ALLERGEN_MAP[a]||[];
+    if(keys.some(k=>tags.includes(k)||text.includes(k.replace('en:','')))) found.push(a);
+  });
+  return found;
+}
+
+function getPersonalNotes(product,type){
+  if(type!=='food')return[];
+  const notes=[]; const nutr=product.nutriments||{}; const tags=(product.ingredients_analysis_tags||[]).map(t=>t.toLowerCase());
+  userSettings.diets.forEach(diet=>{
+    if(diet==='vegan'){if(tags.includes('en:non-vegan'))notes.push('⚠️ غير مناسب للنباتيين الصرف');else if(tags.includes('en:vegan'))notes.push('✅ مناسب للنباتيين الصرف')}
+    if(diet==='keto'){const c=nutr.carbohydrates_100g;if(c!==undefined&&c>10)notes.push('⚠️ كربوهيدرات مرتفعة للكيتو')}
+    if(diet==='low_sugar'){const s=nutr.sugars_100g;if(s!==undefined&&s>10)notes.push('⚠️ سكريات مرتفعة')}
+    if(diet==='low_fat'){const f=nutr.fat_100g;if(f!==undefined&&f>15)notes.push('⚠️ دهون مرتفعة')}
+    if(diet==='low_salt'){const s=nutr.salt_100g;if(s!==undefined&&s>1.2)notes.push('⚠️ ملح مرتفع')}
+  });
+  return notes;
+}
+
+function showResult(p,type){
+  const name=p.product_name||p.product_name_ar||p.product_name_en||'—';
+  const brand=p.brands||'—';
+  const img=p.image_front_url||p.image_url||'';
+  const imgEl=document.getElementById('productImage');
+  if(img){imgEl.src=img;imgEl.style.display='block'}else imgEl.style.display='none';
+
+  document.getElementById('productType').textContent=type==='food'?t('food'):t('cosmetic');
+  document.getElementById('productName').textContent=name;
+  document.getElementById('productBrand').textContent=brand;
+
+  // الحساسية
+  const allergyAlert=document.getElementById('allergyAlert');
+  const found=checkAllergies(p);
+  if(found.length){
+    const labels={gluten:'جلوتين',peanuts:'فول سوداني',milk:'حليب/لاكتوز',eggs:'بيض',soy:'صويا',nuts:'مكسرات',fish:'سمك',sesame:'سمسم'};
+    allergyAlert.innerHTML='🚨 تحذير حساسية: يحتوي على '+found.map(a=>labels[a]||a).join('، ');
+    allergyAlert.classList.add('show');
+  } else allergyAlert.classList.remove('show');
+
+  // الملاحظات الشخصية
+  const personalNote=document.getElementById('personalNote');
+  const notes=getPersonalNotes(p,type);
+  if(notes.length){personalNote.innerHTML=notes.join('<br>');personalNote.classList.add('show')}
+  else personalNote.classList.remove('show');
+
+  const foodBlock=document.getElementById('foodScoreBlock');
+  const cosBlock=document.getElementById('cosmeticBlock');
+  const detailsBox=document.getElementById('detailsBox');
+  detailsBox.innerHTML='';
+
+  let kcal=null, sugars=null, fat=null, salt=null, grade=null;
+
+  if(type==='food'){
+    cosBlock.style.display='none'; foodBlock.style.display='block';
+    grade=(p.nutriscore_grade||p.nutrition_grades||'').toLowerCase();
+    const g=GRADE_MAP[grade];
+    const fill=document.getElementById('scoreFillCircle');
+    const center=document.getElementById('scoreCenter');
+    const label=document.getElementById('scoreLabel');
+    fill.style.strokeDashoffset=CIRC;
+    if(g){center.textContent=grade.toUpperCase();label.textContent=t(g.key);fill.style.stroke=g.color;
+      requestAnimationFrame(()=>requestAnimationFrame(()=>fill.style.strokeDashoffset=String(CIRC*(1-g.pct))))}
+    else{center.textContent='—';label.textContent=t('notAvailable');fill.style.stroke='rgba(255,255,255,.28)'}
+
+    const nutr=p.nutriments||{};
+    kcal=fmtNum(nutr['energy-kcal_100g'],0);
+    sugars=fmtNum(nutr.sugars_100g,1);
+    fat=fmtNum(nutr.fat_100g,1);
+    salt=fmtNum(nutr.salt_100g,2);
+
     [[t('energy'),kcal,'kcal/100g'],[t('sugars'),sugars,'g/100g'],[t('fat'),fat,'g/100g'],[t('salt'),salt,'g/100g']].forEach(([l,v,u])=>{if(v!==null)addRow(detailsBox,l,v+' '+u)});
     const ingredients=p.ingredients_text||p.ingredients_text_ar||'';
     if(ingredients)addRow(detailsBox,t('ingredients'),truncate(ingredients,110));
@@ -336,4 +663,5 @@ document.documentElement.dir=lang==='ar'?'rtl':'ltr';
 applyLang(); updateUI(); updateTodayCalories();
 </script>
 </body>
-  </html>
+</html>
+    
