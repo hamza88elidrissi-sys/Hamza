@@ -381,22 +381,35 @@ function updateTodayCalories(){
   const total = productHistory.filter(p => p.date === today).reduce((sum,p) => sum + (p.kcal||0), 0);
   document.getElementById('todayCalories').textContent = Math.round(total);
 }
-
-function showHistory(){
+function showHistory() {
   const list = document.getElementById('historyList');
   list.innerHTML = '';
-  if(productHistory.length === 0){
-    list.innerHTML = `<p style="text-align:center;color:var(--muted)">${t('noHistory')}</p>`;
+
+  if (productHistory.length === 0) {
+    list.innerHTML = `<p style="text-align:center;color:var(--muted);padding:20px 0;">${t('noHistory')}</p>`;
   } else {
-    productHistory.slice(0,20).forEach((item, idx) => {
+    productHistory.slice(0, 20).forEach((item, idx) => {
       const div = document.createElement('div');
       div.className = 'history-item';
-      div.innerHTML = `<div class="name">\( {item.name}</div><div class="kcal"> \){item.kcal?item.kcal+' kcal':'-'}</div><div class="actions"><button onclick="addToCompare(\( {idx})"> \){t('btnCompare')}</button></div>`;
+
+      const name = item.name || '—';
+      const kcalText = item.kcal ? (item.kcal + ' kcal') : '—';
+
+      div.innerHTML = `
+        <div class="name">${name}</div>
+        <div class="kcal">${kcalText}</div>
+        <div class="actions">
+          <button onclick="addToCompare(\( {idx})"> \){t('btnCompare')}</button>
+        </div>
+      `;
       list.appendChild(div);
     });
   }
+
   document.getElementById('historyCard').classList.add('show');
   document.getElementById('toolsCard').classList.remove('show');
+}
+
 }
 
 function startCompare(){
