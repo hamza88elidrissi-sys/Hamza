@@ -138,7 +138,6 @@ footer{text-align:center;margin-top:26px;color:#5b5788;font-size:.72rem;line-hei
   <button class="btn btn-secondary" id="toolsBtn" onclick="toggleTools()" style="display:none">📊 الأدوات الغذائية</button>
   <button class="btn btn-secondary" id="settingsBtn" onclick="toggleSettings()" style="display:none">⚙️ الإعدادات الغذائية والحساسية</button>
 
-  <!-- Tools -->
   <div class="tools-card glass" id="toolsCard">
     <div class="tools-title" id="toolsTitle">الأدوات الغذائية</div>
     <div class="calorie-box">
@@ -150,14 +149,12 @@ footer{text-align:center;margin-top:26px;color:#5b5788;font-size:.72rem;line-hei
     <button class="btn btn-secondary btn-small" id="btnCloseTools" onclick="toggleTools()">إغلاق</button>
   </div>
 
-  <!-- History -->
   <div class="history-card glass" id="historyCard">
     <div class="tools-title" id="historyTitle">سجل المنتجات</div>
     <div id="historyList"></div>
     <button class="btn btn-secondary" id="btnCloseHistory" onclick="closeHistory()">إغلاق</button>
   </div>
 
-  <!-- Compare -->
   <div class="compare-card glass" id="compareCard">
     <div class="tools-title" id="compareTitle">مقارنة منتجين</div>
     <p id="compareHint" style="text-align:center;color:var(--muted);font-size:.85rem;margin-bottom:12px">اختر منتجين من السجل للمقارنة</p>
@@ -165,7 +162,6 @@ footer{text-align:center;margin-top:26px;color:#5b5788;font-size:.72rem;line-hei
     <button class="btn btn-secondary" id="btnCloseCompare" onclick="closeCompare()">إغلاق</button>
   </div>
 
-  <!-- Settings -->
   <div class="settings-card glass" id="settingsCard">
     <div class="settings-title" id="settingsTitle">الإعدادات الغذائية</div>
     <div class="settings-section">
@@ -227,9 +223,8 @@ footer{text-align:center;margin-top:26px;color:#5b5788;font-size:.72rem;line-hei
   </div>
 
   <footer>Dhaki · Open Food Facts & Open Beauty Facts<br>Pi Network Testnet</footer>
-</div>
-
-<script>
+      </div>
+  <script>
 const T = {
   ar: {
     tagline:"اكتشف جودة ما تستهلكه", loginTitle:"مرحباً بك في Dhaki", loginDesc:"سجل دخولك بـ Pi لفتح الاشتراكات ومسح المنتجات بالكاميرا",
@@ -329,9 +324,24 @@ const T = {
   }
 };
 
-const GRADE_MAP = {a:{pct:0.95,color:'#33d17a',key:'excellent'},b:{pct:0.75,color:'#a3d977',key:'good'},c:{pct:0.55,color:'#f7c948',key:'average'},d:{pct:0.35,color:'#fa9b4e',key:'bad'},e:{pct:0.15,color:'#f2685c',key:'poor'}};
+const GRADE_MAP = {
+  a:{pct:0.95,color:'#33d17a',key:'excellent'},
+  b:{pct:0.75,color:'#a3d977',key:'good'},
+  c:{pct:0.55,color:'#f7c948',key:'average'},
+  d:{pct:0.35,color:'#fa9b4e',key:'bad'},
+  e:{pct:0.15,color:'#f2685c',key:'poor'}
+};
 const CIRC = 326.7;
-const ALLERGEN_MAP = {gluten:['en:gluten','en:wheat','en:barley','en:rye'],peanuts:['en:peanuts'],milk:['en:milk','en:lactose'],eggs:['en:eggs'],soy:['en:soybeans','en:soy'],nuts:['en:nuts','en:almonds','en:hazelnuts'],fish:['en:fish'],sesame:['en:sesame-seeds','en:sesame']};
+const ALLERGEN_MAP = {
+  gluten:['en:gluten','en:wheat','en:barley','en:rye'],
+  peanuts:['en:peanuts'],
+  milk:['en:milk','en:lactose'],
+  eggs:['en:eggs'],
+  soy:['en:soybeans','en:soy'],
+  nuts:['en:nuts','en:almonds','en:hazelnuts'],
+  fish:['en:fish'],
+  sesame:['en:sesame-seeds','en:sesame']
+};
 
 let lang = localStorage.getItem('dhaki_lang') || 'ar';
 let currentUser = null;
@@ -359,7 +369,7 @@ function changeLang(l) {
 }
 
 function applyLang() {
-  const ids = {
+  const map = {
     tagline:'tagline', loginTitle:'loginTitle', loginDesc:'loginDesc', authBtn:'authBtn',
     plansTitle:'plansTitle', plansSub:'plansSub', planWeekly:'planWeekly', planMonthly:'planMonthly',
     planYearly:'planYearly', btnWeekly:'btnSub', btnMonthly:'btnSub', btnYearly:'btnSub',
@@ -371,16 +381,16 @@ function applyLang() {
     settingsTitle:'settingsTitle', allergyTitle:'allergyTitle', dietTitle:'dietTitle',
     btnSaveSettings:'btnSaveSettings', btnCloseSettings:'btnClose', addToTodayBtn:'addToToday'
   };
-  for (const [id, key] of Object.entries(ids)) {
+  for (const id in map) {
     const el = document.getElementById(id);
-    if (el) el.textContent = t(key);
+    if (el) el.textContent = t(map[id]);
   }
-  document.querySelector('.plan-card.popular')?.setAttribute('data-badge', t('badge'));
+  const popular = document.querySelector('.plan-card.popular');
+  if (popular) popular.setAttribute('data-badge', t('badge'));
   document.getElementById('langSelect').value = lang;
 
-  // تحديث نصوص الحساسية والحمية
-  document.querySelectorAll('.i18n').forEach(el => {
-    el.textContent = t(el.dataset.key);
+  document.querySelectorAll('.i18n').forEach(function(el) {
+    el.textContent = t(el.getAttribute('data-key'));
   });
 }
 
@@ -391,6 +401,7 @@ function updateUI() {
   const userBar = document.getElementById('userBar');
   const settingsBtn = document.getElementById('settingsBtn');
   const toolsBtn = document.getElementById('toolsBtn');
+  const subStatus = document.getElementById('subStatus');
 
   if (!currentUser) {
     loginCard.classList.add('show');
@@ -411,7 +422,6 @@ function updateUI() {
   toolsBtn.style.display = 'block';
 
   const sub = JSON.parse(localStorage.getItem('dhaki_sub') || 'null');
-  const subStatus = document.getElementById('subStatus');
   if (sub && new Date(sub.expiresAt) > new Date()) {
     subStatus.textContent = t('activeUntil') + new Date(sub.expiresAt).toLocaleDateString(lang === 'ar' ? 'ar-EG' : lang);
     subStatus.classList.remove('locked');
@@ -426,10 +436,15 @@ function updateUI() {
 }
 
 function toggleSettings() {
-  document.getElementById('settingsCard').classList.toggle('show');
-  if (document.getElementById('settingsCard').classList.contains('show')) {
-    document.querySelectorAll('#allergyGroup input').forEach(el => el.checked = userSettings.allergies.includes(el.value));
-    document.querySelectorAll('#dietGroup input').forEach(el => el.checked = userSettings.diets.includes(el.value));
+  const card = document.getElementById('settingsCard');
+  card.classList.toggle('show');
+  if (card.classList.contains('show')) {
+    document.querySelectorAll('#allergyGroup input').forEach(function(el) {
+      el.checked = userSettings.allergies.indexOf(el.value) !== -1;
+    });
+    document.querySelectorAll('#dietGroup input').forEach(function(el) {
+      el.checked = userSettings.diets.indexOf(el.value) !== -1;
+    });
   }
 }
 
@@ -438,15 +453,24 @@ function toggleTools() {
   updateTodayCalories();
 }
 
-function closeHistory() { document.getElementById('historyCard').classList.remove('show'); }
-function closeCompare() { document.getElementById('compareCard').classList.remove('show'); }
+function closeHistory() {
+  document.getElementById('historyCard').classList.remove('show');
+}
+
+function closeCompare() {
+  document.getElementById('compareCard').classList.remove('show');
+}
 
 function saveSettings() {
   const allergies = [];
   const diets = [];
-  document.querySelectorAll('#allergyGroup input:checked').forEach(el => allergies.push(el.value));
-  document.querySelectorAll('#dietGroup input:checked').forEach(el => diets.push(el.value));
-  userSettings = { allergies, diets };
+  document.querySelectorAll('#allergyGroup input:checked').forEach(function(el) {
+    allergies.push(el.value);
+  });
+  document.querySelectorAll('#dietGroup input:checked').forEach(function(el) {
+    diets.push(el.value);
+  });
+  userSettings = { allergies: allergies, diets: diets };
   localStorage.setItem('dhaki_settings', JSON.stringify(userSettings));
   showMsg('success', t('settingsSaved'));
   toggleSettings();
@@ -454,7 +478,12 @@ function saveSettings() {
 
 function updateTodayCalories() {
   const today = new Date().toDateString();
-  const total = productHistory.filter(p => p.date === today).reduce((s, p) => s + (p.kcal || 0), 0);
+  let total = 0;
+  for (let i = 0; i < productHistory.length; i++) {
+    if (productHistory[i].date === today) {
+      total += (productHistory[i].kcal || 0);
+    }
+  }
   document.getElementById('todayCalories').textContent = Math.round(total);
 }
 
@@ -464,11 +493,13 @@ function showHistory() {
 
   if (productHistory.length === 0) {
     const p = document.createElement('p');
-    p.style.cssText = 'text-align:center;color:var(--muted);padding:20px 0';
+    p.style.cssText = 'text-align:center;color:var(--muted);padding:20px 0;';
     p.textContent = t('noHistory');
     list.appendChild(p);
   } else {
-    productHistory.slice(0, 20).forEach((item, idx) => {
+    const max = Math.min(productHistory.length, 20);
+    for (let i = 0; i < max; i++) {
+      const item = productHistory[i];
       const div = document.createElement('div');
       div.className = 'history-item';
 
@@ -482,13 +513,15 @@ function showHistory() {
 
       const btn = document.createElement('button');
       btn.textContent = t('btnCompare');
-      btn.onclick = () => addToCompare(idx);
+      btn.onclick = (function(index) {
+        return function() { addToCompare(index); };
+      })(i);
 
       div.appendChild(nameDiv);
       div.appendChild(kcalDiv);
       div.appendChild(btn);
       list.appendChild(div);
-    });
+    }
   }
 
   document.getElementById('historyCard').classList.add('show');
@@ -504,7 +537,9 @@ function startCompare() {
 }
 
 function addToCompare(idx) {
-  if (compareList.length >= 2) compareList.shift();
+  if (compareList.length >= 2) {
+    compareList.shift();
+  }
   compareList.push(productHistory[idx]);
 
   if (compareList.length === 2) {
@@ -515,25 +550,39 @@ function addToCompare(idx) {
 }
 
 function renderCompare() {
-  const p1 = compareList[0];
-  const p2 = compareList[1];
   const box = document.getElementById('compareResult');
-  box.style.display = 'grid';
   box.innerHTML = '';
+  box.style.display = 'grid';
 
-  [p1, p2].forEach(p => {
+  for (let i = 0; i < compareList.length; i++) {
+    const p = compareList[i];
     const col = document.createElement('div');
     col.className = 'compare-col';
-    col.innerHTML = `
-      <h4>${p.name || '—'}</h4>
-      <div class="compare-row"><span>\( {t('excellent').substring(0,6)}</span><span> \){p.grade || '—'}</span></div>
-      <div class="compare-row"><span>\( {t('energy')}</span><span> \){p.kcal || '—'} kcal</span></div>
-      <div class="compare-row"><span>\( {t('sugars')}</span><span> \){p.sugars || '—'}g</span></div>
-      <div class="compare-row"><span>\( {t('fat')}</span><span> \){p.fat || '—'}g</span></div>
-      <div class="compare-row"><span>\( {t('salt')}</span><span> \){p.salt || '—'}g</span></div>
-    `;
+
+    const title = document.createElement('h4');
+    title.textContent = p.name || '—';
+    col.appendChild(title);
+
+    function addRow(label, value) {
+      const row = document.createElement('div');
+      row.className = 'compare-row';
+      const s1 = document.createElement('span');
+      s1.textContent = label;
+      const s2 = document.createElement('span');
+      s2.textContent = value;
+      row.appendChild(s1);
+      row.appendChild(s2);
+      col.appendChild(row);
+    }
+
+    addRow(t('excellent').substring(0, 6), p.grade || '—');
+    addRow(t('energy'), (p.kcal || '—') + ' kcal');
+    addRow(t('sugars'), (p.sugars || '—') + 'g');
+    addRow(t('fat'), (p.fat || '—') + 'g');
+    addRow(t('salt'), (p.salt || '—') + 'g');
+
     box.appendChild(col);
-  });
+  }
 
   closeHistory();
 }
@@ -541,10 +590,18 @@ function renderCompare() {
 function addCurrentToToday() {
   if (!currentProductData) return;
   productHistory.unshift({
-    ...currentProductData,
+    name: currentProductData.name,
+    brand: currentProductData.brand,
+    grade: currentProductData.grade,
+    kcal: currentProductData.kcal || 0,
+    sugars: currentProductData.sugars,
+    fat: currentProductData.fat,
+    salt: currentProductData.salt,
+    type: currentProductData.type,
     date: new Date().toDateString()
   });
-  localStorage.setItem('dhaki_history', JSON.stringify(productHistory.slice(0, 50)));
+  if (productHistory.length > 50) productHistory = productHistory.slice(0, 50);
+  localStorage.setItem('dhaki_history', JSON.stringify(productHistory));
   updateTodayCalories();
   showMsg('success', t('addedToToday'));
 }
@@ -555,7 +612,7 @@ async function authenticate() {
     return;
   }
   try {
-    const auth = await Pi.authenticate(['username', 'payments'], () => {});
+    const auth = await Pi.authenticate(['username', 'payments'], function() {});
     currentUser = auth.user;
     updateUI();
     showMsg('success', t('loginSuccess'));
@@ -570,11 +627,11 @@ function subscribe(plan, amount) {
     return;
   }
   Pi.createPayment({
-    amount,
+    amount: amount,
     memo: 'Dhaki ' + plan,
-    metadata: { plan, app: 'Dhaki' }
+    metadata: { plan: plan, app: 'Dhaki' }
   }, {
-    onReadyForServerApproval: async (id) => {
+    onReadyForServerApproval: async function(id) {
       try {
         await fetch('/api/approve', {
           method: 'POST',
@@ -583,24 +640,24 @@ function subscribe(plan, amount) {
         });
       } catch (e) {}
     },
-    onReadyForServerCompletion: async (id, txid) => {
+    onReadyForServerCompletion: async function(id, txid) {
       try {
         await fetch('/api/complete', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ paymentId: id, txid })
+          body: JSON.stringify({ paymentId: id, txid: txid })
         });
-        const days = plan === 'yearly' ? 365 : plan === 'monthly' ? 30 : 7;
+        const days = plan === 'yearly' ? 365 : (plan === 'monthly' ? 30 : 7);
         const exp = new Date(Date.now() + days * 86400000);
-        localStorage.setItem('dhaki_sub', JSON.stringify({ plan, expiresAt: exp.toISOString() }));
+        localStorage.setItem('dhaki_sub', JSON.stringify({ plan: plan, expiresAt: exp.toISOString() }));
         updateUI();
         showMsg('success', t('subSuccess'));
       } catch (e) {
         showMsg('error', t('payError'));
       }
     },
-    onCancel: () => showMsg('error', t('payCancel')),
-    onError: (e) => showMsg('error', t('payError'))
+    onCancel: function() { showMsg('error', t('payCancel')); },
+    onError: function(e) { showMsg('error', t('payError')); }
   });
 }
 
@@ -622,7 +679,7 @@ async function startScan() {
       { facingMode: 'environment' },
       { fps: 10, qrbox: { width: 240, height: 240 } },
       onScanSuccess,
-      () => {}
+      function() {}
     );
   } catch (e) {
     showMsg('error', t('camError'));
@@ -675,6 +732,18 @@ async function analyzeBarcode(code) {
   }
 }
 
+function addDetail(label, value) {
+  const row = document.createElement('div');
+  row.className = 'detail-row';
+  const s1 = document.createElement('span');
+  s1.textContent = label;
+  const s2 = document.createElement('span');
+  s2.textContent = value;
+  row.appendChild(s1);
+  row.appendChild(s2);
+  document.getElementById('detailsBox').appendChild(row);
+}
+
 function showResult(p, type) {
   const name = p.product_name || p.product_name_ar || p.product_name_en || '—';
   const brand = p.brands || '—';
@@ -692,18 +761,22 @@ function showResult(p, type) {
   document.getElementById('productName').textContent = name;
   document.getElementById('productBrand').textContent = brand;
 
-  // Allergy check
+  // Allergy
   const allergyAlert = document.getElementById('allergyAlert');
   const found = [];
-  const tags = (p.allergens_tags || []).map(x => x.toLowerCase());
+  const tags = (p.allergens_tags || []).map(function(x) { return x.toLowerCase(); });
   const text = (p.ingredients_text || '').toLowerCase();
-  userSettings.allergies.forEach(a => {
+  for (let i = 0; i < userSettings.allergies.length; i++) {
+    const a = userSettings.allergies[i];
     const keys = ALLERGEN_MAP[a] || [];
-    if (keys.some(k => tags.includes(k) || text.includes(k.replace('en:', '')))) {
-      found.push(t(a));
+    for (let j = 0; j < keys.length; j++) {
+      if (tags.indexOf(keys[j]) !== -1 || text.indexOf(keys[j].replace('en:', '')) !== -1) {
+        found.push(t(a));
+        break;
+      }
     }
-  });
-  if (found.length) {
+  }
+  if (found.length > 0) {
     allergyAlert.textContent = '🚨 ' + (lang === 'ar' ? 'تحذير حساسية: ' : 'Allergy warning: ') + found.join(', ');
     allergyAlert.classList.add('show');
   } else {
@@ -715,22 +788,34 @@ function showResult(p, type) {
   const notes = [];
   if (type === 'food') {
     const nutr = p.nutriments || {};
-    const analysis = (p.ingredients_analysis_tags || []).map(x => x.toLowerCase());
-    userSettings.diets.forEach(diet => {
-      if (diet === 'vegan' && analysis.includes('en:non-vegan')) notes.push(lang === 'ar' ? '⚠️ غير مناسب للنباتيين' : '⚠️ Not vegan');
-      if (diet === 'keto' && nutr.carbohydrates_100g > 10) notes.push(lang === 'ar' ? '⚠️ كربوهيدرات مرتفعة' : '⚠️ High carbs');
-      if (diet === 'low_sugar' && nutr.sugars_100g > 10) notes.push(lang === 'ar' ? '⚠️ سكريات مرتفعة' : '⚠️ High sugar');
-      if (diet === 'low_fat' && nutr.fat_100g > 15) notes.push(lang === 'ar' ? '⚠️ دهون مرتفعة' : '⚠️ High fat');
-      if (diet === 'low_salt' && nutr.salt_100g > 1.2) notes.push(lang === 'ar' ? '⚠️ ملح مرتفع' : '⚠️ High salt');
-    });
+    const analysis = (p.ingredients_analysis_tags || []).map(function(x) { return x.toLowerCase(); });
+    for (let i = 0; i < userSettings.diets.length; i++) {
+      const diet = userSettings.diets[i];
+      if (diet === 'vegan' && analysis.indexOf('en:non-vegan') !== -1) {
+        notes.push(lang === 'ar' ? '⚠️ غير مناسب للنباتيين' : '⚠️ Not vegan');
+      }
+      if (diet === 'keto' && nutr.carbohydrates_100g > 10) {
+        notes.push(lang === 'ar' ? '⚠️ كربوهيدرات مرتفعة' : '⚠️ High carbs');
+      }
+      if (diet === 'low_sugar' && nutr.sugars_100g > 10) {
+        notes.push(lang === 'ar' ? '⚠️ سكريات مرتفعة' : '⚠️ High sugar');
+      }
+      if (diet === 'low_fat' && nutr.fat_100g > 15) {
+        notes.push(lang === 'ar' ? '⚠️ دهون مرتفعة' : '⚠️ High fat');
+      }
+      if (diet === 'low_salt' && nutr.salt_100g > 1.2) {
+        notes.push(lang === 'ar' ? '⚠️ ملح مرتفع' : '⚠️ High salt');
+      }
+    }
   }
-  if (notes.length) {
+  if (notes.length > 0) {
     personalNote.innerHTML = notes.join('<br>');
     personalNote.classList.add('show');
   } else {
     personalNote.classList.remove('show');
   }
 
+  // Details
   const detailsBox = document.getElementById('detailsBox');
   detailsBox.innerHTML = '';
   let kcal = null, sugars = null, fat = null, salt = null, grade = null;
@@ -747,8 +832,8 @@ function showResult(p, type) {
       center.textContent = grade.toUpperCase();
       label.textContent = t(g.key);
       fill.style.stroke = g.color;
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
+      requestAnimationFrame(function() {
+        requestAnimationFrame(function() {
           fill.style.strokeDashoffset = String(CIRC * (1 - g.pct));
         });
       });
@@ -759,10 +844,10 @@ function showResult(p, type) {
     }
 
     const nutr = p.nutriments || {};
-    kcal = nutr['energy-kcal_100g'] ? Math.round(nutr['energy-kcal_100g']) : null;
-    sugars = nutr.sugars_100g != null ? Number(nutr.sugars_100g).toFixed(1) : null;
-    fat = nutr.fat_100g != null ? Number(nutr.fat_100g).toFixed(1) : null;
-    salt = nutr.salt_100g != null ? Number(nutr.salt_100g).toFixed(2) : null;
+    if (nutr['energy-kcal_100g'] != null) kcal = Math.round(nutr['energy-kcal_100g']);
+    if (nutr.sugars_100g != null) sugars = Number(nutr.sugars_100g).toFixed(1);
+    if (nutr.fat_100g != null) fat = Number(nutr.fat_100g).toFixed(1);
+    if (nutr.salt_100g != null) salt = Number(nutr.salt_100g).toFixed(2);
 
     if (kcal != null) addDetail(t('energy'), kcal + ' kcal/100g');
     if (sugars != null) addDetail(t('sugars'), sugars + ' g/100g');
@@ -773,37 +858,32 @@ function showResult(p, type) {
   }
 
   currentProductData = {
-    name,
-    brand,
+    name: name,
+    brand: brand,
     grade: grade ? grade.toUpperCase() : null,
     kcal: kcal || 0,
-    sugars,
-    fat,
-    salt,
-    type
+    sugars: sugars,
+    fat: fat,
+    salt: salt,
+    type: type
   };
 
   document.getElementById('shareBtn').style.display = 'block';
-  if (type === 'food') document.getElementById('addToTodayBtn').style.display = 'block';
+  if (type === 'food') {
+    document.getElementById('addToTodayBtn').style.display = 'block';
+  }
 
   document.getElementById('resultCard').classList.add('show');
   document.getElementById('resultCard').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-}
-
-function addDetail(label, value) {
-  const row = document.createElement('div');
-  row.className = 'detail-row';
-  row.innerHTML = `<span>\( {label}</span><span> \){value}</span>`;
-  document.getElementById('detailsBox').appendChild(row);
 }
 
 function shareProduct() {
   const name = document.getElementById('productName').textContent;
   const score = document.getElementById('scoreCenter').textContent;
   const label = document.getElementById('scoreLabel').textContent;
-  let msg = `🔍 Dhaki\n${name}\n`;
-  if (score && score !== '—') msg += `\( {score} ( \){label})\n`;
-  msg += `\nPi Network`;
+  let msg = '🔍 Dhaki\n' + name + '\n';
+  if (score && score !== '—') msg += score + ' (' + label + ')\n';
+  msg += '\nPi Network';
   try {
     if (typeof Pi !== 'undefined' && Pi.openShareDialog) {
       Pi.openShareDialog('Dhaki', msg);
@@ -826,7 +906,9 @@ function showMsg(type, text) {
   el.textContent = text;
   el.style.display = 'block';
   clearTimeout(msgTimeout);
-  msgTimeout = setTimeout(() => el.style.display = 'none', 3500);
+  msgTimeout = setTimeout(function() {
+    el.style.display = 'none';
+  }, 3500);
 }
 
 // Init
