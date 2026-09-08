@@ -97,6 +97,18 @@ header{text-align:center;padding:22px 8px 14px}
 .compare-row{display:flex;justify-content:space-between;font-size:.8rem;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.07)}
 .compare-row:last-child{border-bottom:none}
 footer{text-align:center;margin-top:26px;color:#5b5788;font-size:.72rem;line-height:1.6}
+
+/* زر القائمة الثلاث خطوط */
+.menu-wrapper{position:relative;margin-bottom:12px;display:none;justify-content:flex-end}
+.menu-btn{width:46px;height:42px;background:rgba(255,255,255,.09);border:1px solid var(--line);border-radius:12px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:5px;cursor:pointer;padding:0}
+.menu-btn span{display:block;width:20px;height:2px;background:#fff;border-radius:2px;transition:.2s}
+.menu-btn.active span:nth-child(1){transform:rotate(45deg) translate(5px,5px)}
+.menu-btn.active span:nth-child(2){opacity:0}
+.menu-btn.active span:nth-child(3){transform:rotate(-45deg) translate(5px,-5px)}
+.dropdown-menu{display:none;position:absolute;top:50px;left:0;background:rgba(20,16,40,.97);border:1px solid var(--line);border-radius:14px;padding:8px;min-width:240px;box-shadow:0 12px 30px rgba(0,0,0,.45);z-index:100;animation:fadeUp .25s ease}
+.dropdown-menu.show{display:block}
+.dropdown-menu button{display:block;width:100%;background:transparent;border:none;color:#fff;text-align:right;padding:13px 14px;font-size:.95rem;border-radius:10px;cursor:pointer;font-family:var(--font-display)}
+.dropdown-menu button:hover{background:rgba(124,92,252,.2)}
 </style>
 </head>
 <body>
@@ -135,8 +147,19 @@ footer{text-align:center;margin-top:26px;color:#5b5788;font-size:.72rem;line-hei
   </div>
 
   <button class="btn btn-scan locked" id="scanBtn" onclick="startScan()">🔒 ابدأ المسح (يتطلب اشتراك)</button>
-  <button class="btn btn-secondary" id="toolsBtn" onclick="toggleTools()" style="display:none">📊 الأدوات الغذائية</button>
-  <button class="btn btn-secondary" id="settingsBtn" onclick="toggleSettings()" style="display:none">⚙️ الإعدادات الغذائية والحساسية</button>
+
+  <!-- زر القائمة الثلاث خطوط -->
+  <div class="menu-wrapper" id="menuWrapper">
+    <button class="menu-btn" id="menuBtn" onclick="toggleMenu()">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+    <div class="dropdown-menu" id="dropdownMenu">
+      <button onclick="openTools()">📊 الأدوات الغذائية</button>
+      <button onclick="openSettings()">⚙️ الإعدادات الغذائية والحساسية</button>
+    </div>
+  </div>
 
   <div class="tools-card glass" id="toolsCard">
     <div class="tools-title" id="toolsTitle">الأدوات الغذائية</div>
@@ -223,8 +246,8 @@ footer{text-align:center;margin-top:26px;color:#5b5788;font-size:.72rem;line-hei
   </div>
 
   <footer>Dhaki · Open Food Facts & Open Beauty Facts<br>Pi Network Testnet</footer>
-</div>
-<script>
+  </div>
+  <script>
 const T = {
   ar: {
     tagline:"اكتشف جودة ما تستهلكه", loginTitle:"مرحباً بك في Dhaki", loginDesc:"سجل دخولك بـ Pi لفتح الاشتراكات ومسح المنتجات بالكاميرا",
@@ -234,12 +257,12 @@ const T = {
     manualTitle:"إدخال الباركود يدوياً (مجاني)", btnAnalyze:"تحليل", loading:"جاري التحليل...",
     noSub:"لا يوجد اشتراك", activeUntil:"نشط حتى ", food:"طعام", cosmetic:"مستحضر تجميل",
     excellent:"ممتاز", good:"جيد", average:"متوسط", bad:"سيء", poor:"سيء جدًا", notAvailable:"غير متوفر",
-    energy:"الطاقة", sugars:"السكريات", fat:"الدهون", salt:"الملح", ingredients:"المكونات", category:"الفئة",
+    energy:"الطاقة", sugars:"السكريات", fat:"الدهون", salt:"الملح",
     loginSuccess:"تم تسجيل الدخول بنجاح", needLogin:"سجل دخولك أولاً", needSub:"يجب الاشتراك لفتح المسح",
     payCancel:"تم إلغاء الدفع", payError:"خطأ في الدفع", subSuccess:"تم تفعيل الاشتراك بنجاح 🎉",
     camError:"تعذر فتح الكاميرا", invalidBarcode:"باركود غير صحيح", notFound:"المنتج غير موجود",
-    badge:"الأكثر طلباً", shareBtn:"مشاركة التقييم", settingsBtn:"⚙️ الإعدادات الغذائية والحساسية",
-    settingsSaved:"تم حفظ الإعدادات بنجاح", toolsBtn:"📊 الأدوات الغذائية", toolsTitle:"الأدوات الغذائية",
+    badge:"الأكثر طلباً", shareBtn:"مشاركة التقييم",
+    settingsSaved:"تم حفظ الإعدادات بنجاح", toolsTitle:"الأدوات الغذائية",
     calorieLabel:"السعرات الحرارية اليوم (تقديري لكل 100غ)", btnHistory:"سجل المنتجات المفحوصة",
     btnCompare:"مقارنة منتجين", btnClose:"إغلاق", historyTitle:"سجل المنتجات", compareTitle:"مقارنة منتجين",
     compareHint:"اختر منتجين من السجل للمقارنة", settingsTitle:"الإعدادات الغذائية",
@@ -258,12 +281,12 @@ const T = {
     manualTitle:"Enter barcode manually (Free)", btnAnalyze:"Analyze", loading:"Analyzing...",
     noSub:"No subscription", activeUntil:"Active until ", food:"Food", cosmetic:"Cosmetic",
     excellent:"Excellent", good:"Good", average:"Average", bad:"Bad", poor:"Poor", notAvailable:"N/A",
-    energy:"Energy", sugars:"Sugars", fat:"Fat", salt:"Salt", ingredients:"Ingredients", category:"Category",
+    energy:"Energy", sugars:"Sugars", fat:"Fat", salt:"Salt",
     loginSuccess:"Signed in successfully", needLogin:"Please sign in first", needSub:"Subscribe to unlock scanning",
     payCancel:"Payment cancelled", payError:"Payment error", subSuccess:"Subscription activated 🎉",
     camError:"Cannot open camera", invalidBarcode:"Invalid barcode", notFound:"Product not found",
-    badge:"Most popular", shareBtn:"Share Rating", settingsBtn:"⚙️ Nutrition & Allergy Settings",
-    settingsSaved:"Settings saved successfully", toolsBtn:"📊 Nutrition Tools", toolsTitle:"Nutrition Tools",
+    badge:"Most popular", shareBtn:"Share Rating",
+    settingsSaved:"Settings saved successfully", toolsTitle:"Nutrition Tools",
     calorieLabel:"Today's calories (per 100g estimate)", btnHistory:"Scanned Products History",
     btnCompare:"Compare Two Products", btnClose:"Close", historyTitle:"Product History", compareTitle:"Compare Products",
     compareHint:"Select two products from history to compare", settingsTitle:"Nutrition Settings",
@@ -282,12 +305,12 @@ const T = {
     manualTitle:"Introducir código manualmente (Gratis)", btnAnalyze:"Analizar", loading:"Analizando...",
     noSub:"Sin suscripción", activeUntil:"Activo hasta ", food:"Comida", cosmetic:"Cosmético",
     excellent:"Excelente", good:"Bueno", average:"Medio", bad:"Malo", poor:"Muy malo", notAvailable:"N/D",
-    energy:"Energía", sugars:"Azúcares", fat:"Grasas", salt:"Sal", ingredients:"Ingredientes", category:"Categoría",
+    energy:"Energía", sugars:"Azúcares", fat:"Grasas", salt:"Sal",
     loginSuccess:"Sesión iniciada", needLogin:"Inicia sesión primero", needSub:"Suscríbete para escanear",
     payCancel:"Pago cancelado", payError:"Error de pago", subSuccess:"Suscripción activada 🎉",
     camError:"No se puede abrir la cámara", invalidBarcode:"Código inválido", notFound:"Producto no encontrado",
-    badge:"Más popular", shareBtn:"Compartir valoración", settingsBtn:"⚙️ Ajustes de nutrición y alergias",
-    settingsSaved:"Ajustes guardados", toolsBtn:"📊 Herramientas nutricionales", toolsTitle:"Herramientas nutricionales",
+    badge:"Más popular", shareBtn:"Compartir valoración",
+    settingsSaved:"Ajustes guardados", toolsTitle:"Herramientas nutricionales",
     calorieLabel:"Calorías de hoy (estimación por 100g)", btnHistory:"Historial de productos",
     btnCompare:"Comparar dos productos", btnClose:"Cerrar", historyTitle:"Historial", compareTitle:"Comparar productos",
     compareHint:"Selecciona dos productos del historial", settingsTitle:"Ajustes nutricionales",
@@ -306,12 +329,12 @@ const T = {
     manualTitle:"Saisir le code-barres manuellement (Gratuit)", btnAnalyze:"Analyser", loading:"Analyse en cours...",
     noSub:"Pas d'abonnement", activeUntil:"Actif jusqu'au ", food:"Aliment", cosmetic:"Cosmétique",
     excellent:"Excellent", good:"Bon", average:"Moyen", bad:"Mauvais", poor:"Très mauvais", notAvailable:"N/D",
-    energy:"Énergie", sugars:"Sucres", fat:"Matières grasses", salt:"Sel", ingredients:"Ingrédients", category:"Catégorie",
+    energy:"Énergie", sugars:"Sucres", fat:"Matières grasses", salt:"Sel",
     loginSuccess:"Connexion réussie", needLogin:"Connectez-vous d'abord", needSub:"Abonnez-vous pour scanner",
     payCancel:"Paiement annulé", payError:"Erreur de paiement", subSuccess:"Abonnement activé 🎉",
     camError:"Impossible d'ouvrir la caméra", invalidBarcode:"Code-barres invalide", notFound:"Produit introuvable",
-    badge:"Le plus populaire", shareBtn:"Partager l'évaluation", settingsBtn:"⚙️ Paramètres nutrition & allergies",
-    settingsSaved:"Paramètres enregistrés", toolsBtn:"📊 Outils nutritionnels", toolsTitle:"Outils nutritionnels",
+    badge:"Le plus populaire", shareBtn:"Partager l'évaluation",
+    settingsSaved:"Paramètres enregistrés", toolsTitle:"Outils nutritionnels",
     calorieLabel:"Calories du jour (estimation pour 100g)", btnHistory:"Historique des produits",
     btnCompare:"Comparer deux produits", btnClose:"Fermer", historyTitle:"Historique", compareTitle:"Comparer les produits",
     compareHint:"Sélectionnez deux produits de l'historique", settingsTitle:"Paramètres nutritionnels",
@@ -374,7 +397,7 @@ function applyLang() {
     plansTitle:'plansTitle', plansSub:'plansSub', planWeekly:'planWeekly', planMonthly:'planMonthly',
     planYearly:'planYearly', btnWeekly:'btnSub', btnMonthly:'btnSub', btnYearly:'btnSub',
     manualTitle:'manualTitle', btnAnalyze:'btnAnalyze', loadingText:'loading',
-    shareBtn:'shareBtn', settingsBtn:'settingsBtn', toolsBtn:'toolsBtn', toolsTitle:'toolsTitle',
+    shareBtn:'shareBtn', toolsTitle:'toolsTitle',
     calorieLabel:'calorieLabel', btnHistory:'btnHistory', btnCompare:'btnCompare',
     btnCloseTools:'btnClose', historyTitle:'historyTitle', btnCloseHistory:'btnClose',
     compareTitle:'compareTitle', compareHint:'compareHint', btnCloseCompare:'btnClose',
@@ -399,16 +422,14 @@ function updateUI() {
   const plansBox = document.getElementById('plansBox');
   const scanBtn = document.getElementById('scanBtn');
   const userBar = document.getElementById('userBar');
-  const settingsBtn = document.getElementById('settingsBtn');
-  const toolsBtn = document.getElementById('toolsBtn');
+  const menuWrapper = document.getElementById('menuWrapper');
   const subStatus = document.getElementById('subStatus');
 
   if (!currentUser) {
     loginCard.classList.add('show');
     plansBox.classList.remove('show');
     userBar.classList.remove('show');
-    settingsBtn.style.display = 'none';
-    toolsBtn.style.display = 'none';
+    menuWrapper.style.display = 'none';
     scanBtn.className = 'btn btn-scan locked';
     scanBtn.textContent = t('scanLocked');
     return;
@@ -418,8 +439,7 @@ function updateUI() {
   userBar.classList.add('show');
   document.getElementById('userName').textContent = '✦ ' + (currentUser.username || 'User');
   plansBox.classList.add('show');
-  settingsBtn.style.display = 'block';
-  toolsBtn.style.display = 'block';
+  menuWrapper.style.display = 'flex';
 
   const sub = JSON.parse(localStorage.getItem('dhaki_sub') || 'null');
   if (sub && new Date(sub.expiresAt) > new Date()) {
@@ -433,6 +453,25 @@ function updateUI() {
     scanBtn.className = 'btn btn-scan locked';
     scanBtn.textContent = t('scanLocked');
   }
+}
+
+function toggleMenu() {
+  const menu = document.getElementById('dropdownMenu');
+  const btn = document.getElementById('menuBtn');
+  menu.classList.toggle('show');
+  btn.classList.toggle('active');
+}
+
+function openTools() {
+  document.getElementById('dropdownMenu').classList.remove('show');
+  document.getElementById('menuBtn').classList.remove('active');
+  toggleTools();
+}
+
+function openSettings() {
+  document.getElementById('dropdownMenu').classList.remove('show');
+  document.getElementById('menuBtn').classList.remove('active');
+  toggleSettings();
 }
 
 function toggleSettings() {
