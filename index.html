@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Dhaki · ذكي</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <script src="https://sdk.minepi.com/pi-sdk.js"></script>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <style>
@@ -98,16 +99,14 @@ header{text-align:center;padding:22px 8px 14px}
 .compare-row:last-child{border-bottom:none}
 footer{text-align:center;margin-top:26px;color:#5b5788;font-size:.72rem;line-height:1.6}
 
-/* زر القائمة الثلاث خطوط */
+/* زر القائمة - Font Awesome */
 .menu-wrapper{position:relative;margin-bottom:12px;display:none;justify-content:flex-end}
-.menu-btn{width:46px;height:42px;background:rgba(255,255,255,.09);border:1px solid var(--line);border-radius:12px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:5px;cursor:pointer;padding:0}
-.menu-btn span{display:block;width:20px;height:2px;background:#fff;border-radius:2px;transition:.2s}
-.menu-btn.active span:nth-child(1){transform:rotate(45deg) translate(5px,5px)}
-.menu-btn.active span:nth-child(2){opacity:0}
-.menu-btn.active span:nth-child(3){transform:rotate(-45deg) translate(5px,-5px)}
-.dropdown-menu{display:none;position:absolute;top:50px;left:0;background:rgba(20,16,40,.97);border:1px solid var(--line);border-radius:14px;padding:8px;min-width:240px;box-shadow:0 12px 30px rgba(0,0,0,.45);z-index:100;animation:fadeUp .25s ease}
+.menu-btn{width:46px;height:42px;background:rgba(255,255,255,.09);border:1px solid var(--line);border-radius:12px;display:flex;justify-content:center;align-items:center;cursor:pointer;color:#fff;font-size:1.25rem;transition:.2s}
+.menu-btn:hover{background:rgba(124,92,252,.25)}
+.dropdown-menu{display:none;position:absolute;top:50px;left:0;background:rgba(20,16,40,.97);border:1px solid var(--line);border-radius:14px;padding:8px;min-width:260px;box-shadow:0 12px 30px rgba(0,0,0,.45);z-index:100;animation:fadeUp .25s ease}
 .dropdown-menu.show{display:block}
-.dropdown-menu button{display:block;width:100%;background:transparent;border:none;color:#fff;text-align:right;padding:13px 14px;font-size:.95rem;border-radius:10px;cursor:pointer;font-family:var(--font-display)}
+.dropdown-menu button{display:flex;align-items:center;gap:10px;width:100%;background:transparent;border:none;color:#fff;text-align:right;padding:13px 14px;font-size:.95rem;border-radius:10px;cursor:pointer;font-family:var(--font-display)}
+.dropdown-menu button i{width:20px;text-align:center}
 .dropdown-menu button:hover{background:rgba(124,92,252,.2)}
 </style>
 </head>
@@ -148,16 +147,18 @@ footer{text-align:center;margin-top:26px;color:#5b5788;font-size:.72rem;line-hei
 
   <button class="btn btn-scan locked" id="scanBtn" onclick="startScan()">🔒 ابدأ المسح (يتطلب اشتراك)</button>
 
-  <!-- زر القائمة الثلاث خطوط -->
+  <!-- زر القائمة باستخدام Font Awesome -->
   <div class="menu-wrapper" id="menuWrapper">
     <button class="menu-btn" id="menuBtn" onclick="toggleMenu()">
-      <span></span>
-      <span></span>
-      <span></span>
+      <i class="fa-solid fa-bars"></i>
     </button>
     <div class="dropdown-menu" id="dropdownMenu">
-      <button onclick="openTools()">📊 الأدوات الغذائية</button>
-      <button onclick="openSettings()">⚙️ الإعدادات الغذائية والحساسية</button>
+      <button onclick="openTools()">
+        <i class="fa-solid fa-utensils"></i> الأدوات الغذائية
+      </button>
+      <button onclick="openSettings()">
+        <i class="fa-solid fa-sliders"></i> الإعدادات الغذائية والحساسية
+      </button>
     </div>
   </div>
 
@@ -246,8 +247,8 @@ footer{text-align:center;margin-top:26px;color:#5b5788;font-size:.72rem;line-hei
   </div>
 
   <footer>Dhaki · Open Food Facts & Open Beauty Facts<br>Pi Network Testnet</footer>
-  </div>
-  <script>
+ </div>
+ <script>
 const T = {
   ar: {
     tagline:"اكتشف جودة ما تستهلكه", loginTitle:"مرحباً بك في Dhaki", loginDesc:"سجل دخولك بـ Pi لفتح الاشتراكات ومسح المنتجات بالكاميرا",
@@ -435,19 +436,26 @@ function updateUI() {
     return;
   }
 
+  // المستخدم مسجل دخول
   loginCard.classList.remove('show');
   userBar.classList.add('show');
   document.getElementById('userName').textContent = '✦ ' + (currentUser.username || 'User');
-  plansBox.classList.add('show');
+  
+  // زر القائمة يظهر دائماً بعد تسجيل الدخول
   menuWrapper.style.display = 'flex';
 
   const sub = JSON.parse(localStorage.getItem('dhaki_sub') || 'null');
+  
   if (sub && new Date(sub.expiresAt) > new Date()) {
+    // مشترك ← أخفي الباقات
+    plansBox.classList.remove('show');
     subStatus.textContent = t('activeUntil') + new Date(sub.expiresAt).toLocaleDateString(lang === 'ar' ? 'ar-EG' : lang);
     subStatus.classList.remove('locked');
     scanBtn.className = 'btn btn-scan';
     scanBtn.textContent = t('scanOpen');
   } else {
+    // غير مشترك ← أظهر الباقات
+    plansBox.classList.add('show');
     subStatus.textContent = t('noSub');
     subStatus.classList.add('locked');
     scanBtn.className = 'btn btn-scan locked';
@@ -691,7 +699,7 @@ function subscribe(plan, amount) {
         localStorage.setItem('dhaki_sub', JSON.stringify({ plan: plan, expiresAt: exp.toISOString() }));
         updateUI();
         showMsg('success', t('subSuccess'));
-      } catch (e) {
+   } catch (e) {
         showMsg('error', t('payError'));
       }
     },
