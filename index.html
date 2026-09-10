@@ -158,11 +158,6 @@ footer{text-align:center;margin-top:26px;color:#5b5788;font-size:.72rem;line-hei
     </div>
   </div>
 
-  <!-- زر اختبار Pi Local Storage -->
-  <button class="btn btn-secondary" onclick="testPiLocalStorage()" style="margin-bottom:14px;">
-    🧪 اختبار Pi Local Storage
-  </button>
-
   <div class="tools-card glass" id="toolsCard">
     <div class="tools-title" id="toolsTitle">الأدوات الغذائية</div>
     <div class="calorie-box">
@@ -248,8 +243,8 @@ footer{text-align:center;margin-top:26px;color:#5b5788;font-size:.72rem;line-hei
   </div>
 
   <footer>Dhaki · Open Food Facts & Open Beauty Facts<br>Pi Network Testnet</footer>
-</div>
-<script>
+  </div>
+  <script>
 const T = {
   ar: {
     tagline:"اكتشف جودة ما تستهلكه", loginTitle:"مرحباً بك في Dhaki", loginDesc:"سجل دخولك بـ Pi لفتح الاشتراكات ومسح المنتجات بالكاميرا",
@@ -368,7 +363,7 @@ const ALLERGEN_MAP = {
   sesame:['en:sesame-seeds','en:sesame']
 };
 
-// ===== Pi Local Storage Helper =====
+// ===== Pi Local Storage Helper (مع Fallback) =====
 const PiStorage = {
   async setItem(key, value) {
     try {
@@ -376,9 +371,7 @@ const PiStorage = {
         await Pi.localStorage.setItem(key, value);
         return true;
       }
-    } catch (e) {
-      console.warn('Pi LocalStorage set failed', e);
-    }
+    } catch (e) {}
     localStorage.setItem(key, value);
     return false;
   },
@@ -388,9 +381,7 @@ const PiStorage = {
         const value = await Pi.localStorage.getItem(key);
         if (value !== null && value !== undefined) return value;
       }
-    } catch (e) {
-      console.warn('Pi LocalStorage get failed', e);
-    }
+    } catch (e) {}
     return localStorage.getItem(key);
   },
   async removeItem(key) {
@@ -402,38 +393,6 @@ const PiStorage = {
     localStorage.removeItem(key);
   }
 };
-
-// ===== اختبار Pi Local Storage =====
-async function testPiLocalStorage() {
-  if (typeof Pi === 'undefined') {
-    showMsg('error', 'Pi SDK غير موجود - افتح التطبيق من متصفح Pi');
-    return;
-  }
-
-  if (!Pi.localStorage) {
-    showMsg('error', 'Pi.localStorage غير متوفر حالياً');
-    return;
-  }
-
-  try {
-    const testKey = 'dhaki_test_' + Date.now();
-    const testValue = 'Hello from Dhaki';
-
-    await Pi.localStorage.setItem(testKey, testValue);
-    const result = await Pi.localStorage.getItem(testKey);
-
-    if (result === testValue) {
-      showMsg('success', '✅ Pi Local Storage يعمل بنجاح');
-      if (Pi.localStorage.removeItem) {
-        await Pi.localStorage.removeItem(testKey);
-      }
-    } else {
-      showMsg('error', 'فشل في قراءة البيانات من Pi Local Storage');
-    }
-  } catch (e) {
-    showMsg('error', 'خطأ: ' + (e.message || e));
-  }
-}
 
 let lang = 'ar';
 let currentUser = null;
@@ -454,10 +413,8 @@ function t(key) {
 async function loadInitialData() {
   const savedLang = await PiStorage.getItem('dhaki_lang');
   lang = savedLang || 'ar';
-
   const savedSettings = await PiStorage.getItem('dhaki_settings');
   userSettings = savedSettings ? JSON.parse(savedSettings) : { allergies: [], diets: [] };
-
   const savedHistory = await PiStorage.getItem('dhaki_history');
   productHistory = savedHistory ? JSON.parse(savedHistory) : [];
 }
@@ -491,7 +448,7 @@ function applyLang() {
   const popular = document.querySelector('.plan-card.popular');
   if (popular) popular.setAttribute('data-badge', t('badge'));
   document.getElementById('langSelect').value = lang;
-  document.querySelectorAll('.i18n').forEach(function(el) {
+  document.querySelectorAll('.i18n').forEach(el => {
     el.textContent = t(el.getAttribute('data-key'));
   });
 }
@@ -558,10 +515,10 @@ function toggleSettings() {
   const card = document.getElementById('settingsCard');
   card.classList.toggle('show');
   if (card.classList.contains('show')) {
-    document.querySelectorAll('#allergyGroup input').forEach(function(el) {
+    document.querySelectorAll('#allergyGroup input').forEach(el => {
       el.checked = userSettings.allergies.indexOf(el.value) !== -1;
     });
-    document.querySelectorAll('#dietGroup input').forEach(function(el) {
+    document.querySelectorAll('#dietGroup input').forEach(el => {
       el.checked = userSettings.diets.indexOf(el.value) !== -1;
     });
   }
@@ -583,12 +540,8 @@ function closeCompare() {
 async function saveSettings() {
   const allergies = [];
   const diets = [];
-  document.querySelectorAll('#allergyGroup input:checked').forEach(function(el) {
-    allergies.push(el.value);
-  });
-  document.querySelectorAll('#dietGroup input:checked').forEach(function(el) {
-    diets.push(el.value);
-  });
+  document.querySelectorAll('#allergyGroup input:checked').forEach(el => allergies.push(el.value));
+  document.querySelectorAll('#dietGroup input:checked').forEach(el => diets.push(el.value));
   userSettings = { allergies, diets };
   await PiStorage.setItem('dhaki_settings', JSON.stringify(userSettings));
   showMsg('success', t('settingsSaved'));
@@ -607,7 +560,6 @@ function updateTodayCalories() {
 function showHistory() {
   const list = document.getElementById('historyList');
   list.innerHTML = '';
-
   if (productHistory.length === 0) {
     const p = document.createElement('p');
     p.style.cssText = 'text-align:center;color:var(--muted);padding:20px 0;';
@@ -619,28 +571,21 @@ function showHistory() {
       const item = productHistory[i];
       const div = document.createElement('div');
       div.className = 'history-item';
-
       const nameDiv = document.createElement('div');
       nameDiv.className = 'name';
       nameDiv.textContent = item.name || '—';
-
       const kcalDiv = document.createElement('div');
       kcalDiv.className = 'kcal';
       kcalDiv.textContent = item.kcal ? (item.kcal + ' kcal') : '—';
-
       const btn = document.createElement('button');
       btn.textContent = t('btnCompare');
-      btn.onclick = (function(index) {
-        return function() { addToCompare(index); };
-      })(i);
-
+      btn.onclick = (function(index) { return function() { addToCompare(index); }; })(i);
       div.appendChild(nameDiv);
       div.appendChild(kcalDiv);
       div.appendChild(btn);
       list.appendChild(div);
     }
   }
-
   document.getElementById('historyCard').classList.add('show');
   document.getElementById('toolsCard').classList.remove('show');
 }
@@ -664,16 +609,13 @@ function renderCompare() {
   const box = document.getElementById('compareResult');
   box.innerHTML = '';
   box.style.display = 'grid';
-
   for (let i = 0; i < compareList.length; i++) {
     const p = compareList[i];
     const col = document.createElement('div');
     col.className = 'compare-col';
-
     const title = document.createElement('h4');
     title.textContent = p.name || '—';
     col.appendChild(title);
-
     function addRow(label, value) {
       const row = document.createElement('div');
       row.className = 'compare-row';
@@ -685,7 +627,6 @@ function renderCompare() {
       row.appendChild(s2);
       col.appendChild(row);
     }
-
     addRow(t('excellent').substring(0, 6), p.grade || '—');
     addRow(t('energy'), (p.kcal || '—') + ' kcal');
     addRow(t('sugars'), (p.sugars || '—') + 'g');
