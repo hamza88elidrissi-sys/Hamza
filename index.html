@@ -158,6 +158,11 @@ footer{text-align:center;margin-top:26px;color:#5b5788;font-size:.72rem;line-hei
     </div>
   </div>
 
+  <!-- زر اختبار Pi Local Storage -->
+  <button class="btn btn-secondary" onclick="testPiLocalStorage()" style="margin-bottom:14px;">
+    🧪 اختبار Pi Local Storage
+  </button>
+
   <div class="tools-card glass" id="toolsCard">
     <div class="tools-title" id="toolsTitle">الأدوات الغذائية</div>
     <div class="calorie-box">
@@ -243,8 +248,8 @@ footer{text-align:center;margin-top:26px;color:#5b5788;font-size:.72rem;line-hei
   </div>
 
   <footer>Dhaki · Open Food Facts & Open Beauty Facts<br>Pi Network Testnet</footer>
-  </div>
-  <script>
+</div>
+<script>
 const T = {
   ar: {
     tagline:"اكتشف جودة ما تستهلكه", loginTitle:"مرحباً بك في Dhaki", loginDesc:"سجل دخولك بـ Pi لفتح الاشتراكات ومسح المنتجات بالكاميرا",
@@ -372,7 +377,7 @@ const PiStorage = {
         return true;
       }
     } catch (e) {
-      console.warn('Pi LocalStorage set failed, using localStorage', e);
+      console.warn('Pi LocalStorage set failed', e);
     }
     localStorage.setItem(key, value);
     return false;
@@ -384,7 +389,7 @@ const PiStorage = {
         if (value !== null && value !== undefined) return value;
       }
     } catch (e) {
-      console.warn('Pi LocalStorage get failed, using localStorage', e);
+      console.warn('Pi LocalStorage get failed', e);
     }
     return localStorage.getItem(key);
   },
@@ -397,6 +402,38 @@ const PiStorage = {
     localStorage.removeItem(key);
   }
 };
+
+// ===== اختبار Pi Local Storage =====
+async function testPiLocalStorage() {
+  if (typeof Pi === 'undefined') {
+    showMsg('error', 'Pi SDK غير موجود - افتح التطبيق من متصفح Pi');
+    return;
+  }
+
+  if (!Pi.localStorage) {
+    showMsg('error', 'Pi.localStorage غير متوفر حالياً');
+    return;
+  }
+
+  try {
+    const testKey = 'dhaki_test_' + Date.now();
+    const testValue = 'Hello from Dhaki';
+
+    await Pi.localStorage.setItem(testKey, testValue);
+    const result = await Pi.localStorage.getItem(testKey);
+
+    if (result === testValue) {
+      showMsg('success', '✅ Pi Local Storage يعمل بنجاح');
+      if (Pi.localStorage.removeItem) {
+        await Pi.localStorage.removeItem(testKey);
+      }
+    } else {
+      showMsg('error', 'فشل في قراءة البيانات من Pi Local Storage');
+    }
+  } catch (e) {
+    showMsg('error', 'خطأ: ' + (e.message || e));
+  }
+}
 
 let lang = 'ar';
 let currentUser = null;
@@ -454,7 +491,6 @@ function applyLang() {
   const popular = document.querySelector('.plan-card.popular');
   if (popular) popular.setAttribute('data-badge', t('badge'));
   document.getElementById('langSelect').value = lang;
-
   document.querySelectorAll('.i18n').forEach(function(el) {
     el.textContent = t(el.getAttribute('data-key'));
   });
@@ -553,7 +589,7 @@ async function saveSettings() {
   document.querySelectorAll('#dietGroup input:checked').forEach(function(el) {
     diets.push(el.value);
   });
-  userSettings = { allergies: allergies, diets: diets };
+  userSettings = { allergies, diets };
   await PiStorage.setItem('dhaki_settings', JSON.stringify(userSettings));
   showMsg('success', t('settingsSaved'));
   toggleSettings();
@@ -563,9 +599,7 @@ function updateTodayCalories() {
   const today = new Date().toDateString();
   let total = 0;
   for (let i = 0; i < productHistory.length; i++) {
-    if (productHistory[i].date === today) {
-      total += (productHistory[i].kcal || 0);
-    }
+    if (productHistory[i].date === today) total += (productHistory[i].kcal || 0);
   }
   document.getElementById('todayCalories').textContent = Math.round(total);
 }
@@ -622,12 +656,8 @@ function startCompare() {
 function addToCompare(idx) {
   if (compareList.length >= 2) compareList.shift();
   compareList.push(productHistory[idx]);
-
-  if (compareList.length === 2) {
-    renderCompare();
-  } else {
-    showMsg('success', t('firstSelected'));
-  }
+  if (compareList.length === 2) renderCompare();
+  else showMsg('success', t('firstSelected'));
 }
 
 function renderCompare() {
@@ -661,7 +691,6 @@ function renderCompare() {
     addRow(t('sugars'), (p.sugars || '—') + 'g');
     addRow(t('fat'), (p.fat || '—') + 'g');
     addRow(t('salt'), (p.salt || '—') + 'g');
-
     box.appendChild(col);
   }
   closeHistory();
@@ -737,7 +766,7 @@ function subscribe(plan, amount) {
       }
     },
     onCancel: function() { showMsg('error', t('payCancel')); },
-    onError: function(e) { showMsg('error', t('payError')); }
+    onError: function() { showMsg('error', t('payError')); }
   });
 }
 
@@ -845,7 +874,7 @@ function showResult(p, type) {
   // Allergy
   const allergyAlert = document.getElementById('allergyAlert');
   const found = [];
-  const tags = (p.allergens_tags || []).map(function(x) { return x.toLowerCase(); });
+  const tags = (p.allergens_tags || []).map(x => x.toLowerCase());
   const text = (p.ingredients_text || '').toLowerCase();
   for (let i = 0; i < userSettings.allergies.length; i++) {
     const a = userSettings.allergies[i];
@@ -869,7 +898,7 @@ function showResult(p, type) {
   const notes = [];
   if (type === 'food') {
     const nutr = p.nutriments || {};
-    const analysis = (p.ingredients_analysis_tags || []).map(function(x) { return x.toLowerCase(); });
+    const analysis = (p.ingredients_analysis_tags || []).map(x => x.toLowerCase());
     for (let i = 0; i < userSettings.diets.length; i++) {
       const diet = userSettings.diets[i];
       if (diet === 'vegan' && analysis.indexOf('en:non-vegan') !== -1) notes.push(lang === 'ar' ? '⚠️ غير مناسب للنباتيين' : '⚠️ Not vegan');
@@ -902,8 +931,8 @@ function showResult(p, type) {
       center.textContent = grade.toUpperCase();
       label.textContent = t(g.key);
       fill.style.stroke = g.color;
-      requestAnimationFrame(function() {
-        requestAnimationFrame(function() {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
           fill.style.strokeDashoffset = String(CIRC * (1 - g.pct));
         });
       });
@@ -928,14 +957,10 @@ function showResult(p, type) {
   }
 
   currentProductData = {
-    name: name,
-    brand: brand,
+    name, brand,
     grade: grade ? grade.toUpperCase() : null,
     kcal: kcal || 0,
-    sugars: sugars,
-    fat: fat,
-    salt: salt,
-    type: type
+    sugars, fat, salt, type
   };
 
   document.getElementById('shareBtn').style.display = 'block';
@@ -974,9 +999,7 @@ function showMsg(type, text) {
   el.textContent = text;
   el.style.display = 'block';
   clearTimeout(msgTimeout);
-  msgTimeout = setTimeout(function() {
-    el.style.display = 'none';
-  }, 3500);
+  msgTimeout = setTimeout(() => el.style.display = 'none', 4000);
 }
 
 // ===== بدء التشغيل =====
